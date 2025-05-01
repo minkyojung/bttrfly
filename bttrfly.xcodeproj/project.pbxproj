@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		D8748BAC2DBDF472008CD6BE /* EditorResources in Resources */ = {isa = PBXBuildFile; fileRef = D8748BAB2DBDF471008CD6BE /* EditorResources */; };
+		D8C567E62DC39AF3008D0509 /* dist in Resources */ = {isa = PBXBuildFile; fileRef = D8C567E52DC39AF3008D0509 /* dist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +33,7 @@
 		D8748B732DBDF0D9008CD6BE /* bttrflyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = bttrflyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8748B7D2DBDF0D9008CD6BE /* bttrflyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = bttrflyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8748BAB2DBDF471008CD6BE /* EditorResources */ = {isa = PBXFileReference; lastKnownFileType = folder; name = EditorResources; path = ../EditorResources; sourceTree = "<group>"; };
+		D8C567E52DC39AF3008D0509 /* dist */ = {isa = PBXFileReference; lastKnownFileType = folder; name = dist; path = ../EditorResources/dist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -80,6 +82,7 @@
 		D8748B592DBDF0D8008CD6BE = {
 			isa = PBXGroup;
 			children = (
+				D8C567E52DC39AF3008D0509 /* dist */,
 				D8748BAB2DBDF471008CD6BE /* EditorResources */,
 				D8748B642DBDF0D8008CD6BE /* bttrfly */,
 				D8748B762DBDF0D9008CD6BE /* bttrflyTests */,
@@ -218,6 +221,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D8C567E62DC39AF3008D0509 /* dist in Resources */,
 				D8748BAC2DBDF472008CD6BE /* EditorResources in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
