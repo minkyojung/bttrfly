@@ -3,42 +3,6 @@ import WebKit
 import Combine
 import UniformTypeIdentifiers
 
-// MARK: - MarkdownModel
-// Simple observable model that loads/saves a markdown file.
-final class MarkdownModel: ObservableObject {
-    @Published var text: String = ""
-    @Published var url: URL?
-    private var saveCancellable: AnyCancellable?
-
-    init() {
-        // Auto‑save whenever text changes (0.5 s debounce)
-        saveCancellable = $text
-            .removeDuplicates()
-            .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
-            .sink { [weak self] _ in
-                try? self?.save()
-            }
-    }
-    
-    /// Convenience: quick check for .md extension when binding
-    static let markdownUTType = UTType(filenameExtension: "md") ?? .plainText
-
-    func load(fileURL: URL) throws {
-        text = try String(contentsOf: fileURL, encoding: .utf8)
-        url  = fileURL
-    }
-
-    func save() throws {
-        guard let url else { return }
-        guard url.startAccessingSecurityScopedResource() else {
-            throw CocoaError(.fileWriteNoPermission)
-        }
-        defer { url.stopAccessingSecurityScopedResource() }
-
-        try text.write(to: url, atomically: true, encoding: .utf8)
-    }
-}
-
 struct WebView: NSViewRepresentable {
     @ObservedObject var model: MarkdownModel
 
@@ -76,6 +40,8 @@ struct WebView: NSViewRepresentable {
         let parent: WebView
         var web: WKWebView?
         private var cancellable: AnyCancellable?
+        private var isUpdatingFromJS = false
+        private var lastHTMLFromJS = ""
 
         init(_ parent: WebView) {
             self.parent = parent
@@ -85,7 +51,10 @@ struct WebView: NSViewRepresentable {
                 .dropFirst()
                 .debounce(for: .milliseconds(200), scheduler: RunLoop.main)
                 .sink { [weak self] md in
-                    guard let webView = self?.web else { return }
+                    guard let self = self,
+                          !self.isUpdatingFromJS,
+                          md != self.lastHTMLFromJS,
+                          let webView = self.web else { return }
                     let escaped = md.replacingOccurrences(of: "`", with: "\\`")
                     webView.evaluateJavaScript("""
                         window.editor?.commands.setContent(`\(escaped)`);
@@ -96,9 +65,14 @@ struct WebView: NSViewRepresentable {
         // JS -> Swift: receive HTML updates
         func userContentController(_ userContentController: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
+            print("➡️ onUpdate", Date().timeIntervalSince1970)
             guard let html = message.body as? String else { return }
             DispatchQueue.main.async {
+                self.isUpdatingFromJS = true
+                self.lastHTMLFromJS = html
                 self.parent.model.text = html
+                // keep flag true for one more runloop so Combine sink is skipped
+                DispatchQueue.main.async { self.isUpdatingFromJS = false }
             }
         }
 

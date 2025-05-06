@@ -29,26 +29,35 @@ struct MyFloatingMarkdownApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var panel: FloatingPanelController?
     let model = MarkdownModel()
+    private var autosave: AutosaveService?
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    func applicationDidFinishLaunching(_ note: Notification) {
         panel = FloatingPanelController(root: WebView(model: model))
         panel?.showWindow(nil)
+        autosave = AutosaveService(model: model)
+        print("Documents path 👉",
+              FileManager.default
+                .homeDirectoryForCurrentUser
+                .appendingPathComponent("Documents").path)
     }
 
     @objc func openDocument(_ sender: Any?) {
-        // 패널이 non‑activating일 때도 단축키·메뉴가 동작하도록 앱을 활성화
         NSApp.activate(ignoringOtherApps: true)
-        print("💡 openDocument fired")
-        let open = NSOpenPanel()
-        open.allowedContentTypes = [UTType(importedAs: "net.daringfireball.markdown")]
-        open.begin { [weak self] response in
-            guard response == .OK, let url = open.url else { return }
-            guard url.startAccessingSecurityScopedResource() else { return }
-            do {
-                try self?.model.load(fileURL: url)
-            } catch {
-                print("Failed to load markdown file:", error)
-            }
+
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [UTType(filenameExtension: "md") ?? .plainText]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+
+        if panel.runModal() == .OK, let url = panel.url {
+            // Create a security‑scoped bookmark
+            guard let bm = try? url.bookmarkData(options: .withSecurityScope,
+                                                 includingResourceValuesForKeys: nil,
+                                                 relativeTo: nil) else { return }
+            // Save to recent list
+            RecentFileManager.shared.add(url: url, bookmark: bm)
+            // Load into model (model handles scope)
+            try? model.load(fileURL: url, bookmark: bm)
         }
     }
 
