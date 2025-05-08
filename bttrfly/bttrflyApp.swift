@@ -8,6 +8,7 @@
 import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
+import KeyboardShortcuts
 
 @main
 struct MyFloatingMarkdownApp: App {
@@ -16,6 +17,7 @@ struct MyFloatingMarkdownApp: App {
         // A hidden settings scene is enough to satisfy SwiftUI’s requirement
         // for at least one `Scene`, while avoiding an empty window opening.
         Settings {
+            ShortcutPrefs()
             EmptyView()          // nothing visible
         }
         .commands {
@@ -32,13 +34,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var autosave: AutosaveService?
 
     func applicationDidFinishLaunching(_ note: Notification) {
-        panel = FloatingPanelController(root: WebView(model: model))
+        panel = FloatingPanelController(root: NoteView(model: model))
         panel?.showWindow(nil)
         autosave = AutosaveService(model: model)
         print("Documents path 👉",
               FileManager.default
                 .homeDirectoryForCurrentUser
                 .appendingPathComponent("Documents").path)
+
+        // Register global shortcut
+        KeyboardShortcuts.onKeyUp(for: .showNote) { [weak self] in
+            self?.toggleNote()
+        }
     }
 
     @objc func openDocument(_ sender: Any?) {
@@ -66,6 +73,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             try model.save()
         } catch {
             print("❌ Failed to save markdown file:", error)
+        }
+    }
+    // Toggle the floating note window via global shortcut
+    private func toggleNote() {
+        guard let panel = panel else { return }
+        if panel.window?.isVisible == true {
+            panel.close()
+        } else {
+            panel.showWindow(nil)
+            panel.window?.makeKey()        // bring to front
         }
     }
 }

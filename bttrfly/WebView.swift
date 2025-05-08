@@ -17,6 +17,8 @@ struct WebView: NSViewRepresentable {
         // Enable Web Inspector for debugging
         web.configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
         web.navigationDelegate = context.coordinator
+        // Make the WKWebView transparent so it sits directly on the blur layer
+        web.setValue(false, forKey: "drawsBackground")   // disable white background
         // Load local EditorResources/index.html
         if let htmlURL = Bundle.main.url(forResource: "index",
                                          withExtension: "html",
@@ -81,6 +83,8 @@ struct WebView: NSViewRepresentable {
             let escaped = parent.model.text
                 .replacingOccurrences(of: "`", with: "\\`")   // JS 백틱 이스케이프
             webView.evaluateJavaScript("window.editor?.commands.setContent(`\(escaped)`);")
+            webView.becomeFirstResponder()   // make WKWebView the key responder
+            webView.evaluateJavaScript("window.editor?.commands.focus();")   // focus the tiptap editor
         }
         
         
