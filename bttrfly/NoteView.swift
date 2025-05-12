@@ -17,20 +17,28 @@ struct VisualEffectBlur: NSViewRepresentable {
 }
 
 struct NoteView: View {
-    @ObservedObject var model: MarkdownModel     // 이미 쓰고 있는 모델
-
+    @Environment(\.colorScheme) var cs
+    @ObservedObject var model: MarkdownModel
+    
     var body: some View {
         ZStack {
-            VisualEffectBlur(material: .hudWindow)
+            // ① VisualEffectBlur + 테두리
+            VisualEffectBlur(material: .underWindowBackground)
+                .background(          // ② 바로 ‘뒤’에 암막을 깐다
+                    Color.black.opacity(cs == .dark ? 0.5 : 0.18)
+                        .ignoresSafeArea()   // 타이틀바까지 확장
+                )
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .stroke(Color.white.opacity(0.25), lineWidth: 1)
                 )
-                .ignoresSafeArea()                    // let blur extend into titlebar
+                .ignoresSafeArea()           // 블러도 타이틀바까지
+            
+            // ③ 실제 에디터
             WebView(model: model)
-                .padding(.horizontal, 16)        // reduce left‑right margin
+                .padding(.horizontal, 12)
         }
-        .frame(minWidth: 350, minHeight: 480)    // 패널 기본 크기
+        .frame(minWidth: 330, minHeight: 480)
     }
 }

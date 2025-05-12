@@ -19,6 +19,10 @@ struct WebView: NSViewRepresentable {
         web.navigationDelegate = context.coordinator
         // Make the WKWebView transparent so it sits directly on the blur layer
         web.setValue(false, forKey: "drawsBackground")   // disable white background
+        if let scrollView = web.enclosingScrollView {
+            scrollView.hasVerticalScroller = false
+            scrollView.hasHorizontalScroller = false
+        }
         // Load local EditorResources/index.html
         if let htmlURL = Bundle.main.url(forResource: "index",
                                          withExtension: "html",
