@@ -28,9 +28,9 @@ struct NoteView: View {
                     Color.black.opacity(cs == .dark ? 0.5 : 0.18)
                         .ignoresSafeArea()   // 타이틀바까지 확장
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .stroke(Color.white.opacity(0.25), lineWidth: 1)
                 )
                 .ignoresSafeArea()           // 블러도 타이틀바까지

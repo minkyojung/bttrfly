@@ -114,4 +114,23 @@ final class MarkdownModel: ObservableObject {
             u.stopAccessingSecurityScopedResource()
         }
     }
+
+    var currentFileName: String {
+        url?.deletingPathExtension().lastPathComponent ?? "Untitled"
+    }
+
+    // MARK: - Toolbar helpers
+    func createNewFile() {
+        url = nil
+        text = ""
+    }
+
+    func presentOpenPanel() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [Self.markdownUTType]
+        panel.begin { [weak self] result in
+            guard result == .OK, let url = panel.url else { return }
+            try? self?.load(fileURL: url)
+        }
+    }
 }

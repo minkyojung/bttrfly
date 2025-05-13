@@ -34,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var autosave: AutosaveService?
 
     func applicationDidFinishLaunching(_ note: Notification) {
-        panel = FloatingPanelController(root: NoteView(model: model))
+        panel = FloatingPanelController(root: NoteView(model: model), model: model)
         panel?.showWindow(nil)
         autosave = AutosaveService(model: model)
         print("Documents path 👉",
