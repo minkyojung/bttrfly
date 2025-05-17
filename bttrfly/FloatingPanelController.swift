@@ -18,6 +18,8 @@ private struct ToolbarButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.secondary)        // match title color in all themes
                 .font(.system(size: 14, weight: .semibold))
                 .padding(6)
                 .background(
@@ -32,9 +34,19 @@ private struct ToolbarButton: View {
     }
 }
 
+// MARK: - Reactive file title view
+private struct FileTitleView: View {
+    @ObservedObject var model: MarkdownModel
+    var body: some View {
+        Text(model.currentFileName)
+            .font(.system(size: 12, weight: .regular))
+            .foregroundColor(.secondary)
+            .padding(.horizontal, 4)
+    }
+}
+
 final class FloatingPanelController: NSWindowController, NSToolbarDelegate {
     private weak var model: MarkdownModel?
-    private var titleItem: NSToolbarItem?
 
     convenience init(root: some View, model: MarkdownModel) {
         let panel = NSPanel(
@@ -55,6 +67,7 @@ final class FloatingPanelController: NSWindowController, NSToolbarDelegate {
         self.init(window: panel)
 
         self.model = model
+
         panel.contentView = NSHostingView(rootView: root)
 
         // ── Toolbar setup ───────────────────────────────
@@ -80,7 +93,7 @@ final class FloatingPanelController: NSWindowController, NSToolbarDelegate {
     // MARK: - NSToolbarDelegate
 
     func toolbarDefaultItemIdentifiers(_ tb: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.flexibleSpace, .fileTitle, .flexibleSpace, .newFile, .openFile]
+        [.flexibleSpace, .fileTitle, .flexibleSpace, .openFile, .newFile]
     }
     func toolbarAllowedItemIdentifiers(_ tb: NSToolbar) -> [NSToolbarItem.Identifier] {
         [.flexibleSpace, .fileTitle, .newFile, .openFile]
@@ -92,34 +105,31 @@ final class FloatingPanelController: NSWindowController, NSToolbarDelegate {
 
         switch id {
         case .fileTitle:
-            let hosting = NSHostingView(rootView:
-                Text(model?.currentFileName ?? "Untitled")
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(.secondary)
-                    .padding(.horizontal, 4)
-            )
             let item = NSToolbarItem(itemIdentifier: id)
-            item.view = hosting
-            titleItem = item
+            if let model = model {
+                item.view = NSHostingView(rootView: FileTitleView(model: model))
+            }
+            return item
+            
+        case .openFile:
+            let item = NSToolbarItem(itemIdentifier: id)
+            item.view = NSHostingView(rootView:
+                ToolbarButton(systemName: "magnifyingglass",
+                              tooltip: "Open",
+                              action: { [weak self] in self?.openDocument() })
+            )
             return item
 
         case .newFile:
             let item = NSToolbarItem(itemIdentifier: id)
             item.view = NSHostingView(rootView:
-                ToolbarButton(systemName: "plus",
+                ToolbarButton(systemName: "pencil.line",
                               tooltip: "New Note",
                               action: { [weak self] in self?.newDocument() })
             )
             return item
 
-        case .openFile:
-            let item = NSToolbarItem(itemIdentifier: id)
-            item.view = NSHostingView(rootView:
-                ToolbarButton(systemName: "text.magnifyingglass",
-                              tooltip: "Open",
-                              action: { [weak self] in self?.openDocument() })
-            )
-            return item
+
 
         default: return nil
         }
@@ -128,17 +138,8 @@ final class FloatingPanelController: NSWindowController, NSToolbarDelegate {
     // MARK: - Actions
     @objc private func newDocument() {
         model?.createNewFile()
-        refreshTitle()
     }
     @objc private func openDocument() {
         model?.presentOpenPanel()
-        refreshTitle()
-    }
-
-    private func refreshTitle() {
-        guard let hosting = titleItem?.view as? NSHostingView<Text> else { return }
-        hosting.rootView = Text(model?.currentFileName ?? "Untitled")
-            .font(.system(size: 14, weight: .semibold))
-            .padding(.horizontal, 4) as! Text
     }
 }

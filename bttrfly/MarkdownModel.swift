@@ -5,6 +5,8 @@ import UniformTypeIdentifiers
 final class MarkdownModel: ObservableObject {
     @Published var text: String = ""
     @Published var url: URL?
+    /// true = note created in-app, false = opened existing file
+    @Published var isScratch: Bool = true
     private var saveCancellable: AnyCancellable?
     private var securityAccess: Bool = false
 
@@ -37,7 +39,7 @@ final class MarkdownModel: ObservableObject {
         var base = "Untitled"
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if let first = trimmed.split(separator: "\n").first, !first.isEmpty {
-            base = String(first.prefix(50))
+            base = String(first.prefix(20))
         }
 
         // ensure uniqueness
@@ -57,6 +59,7 @@ final class MarkdownModel: ObservableObject {
     /// Load a local (sandbox) file – existing behaviour preserved
     func load(fileURL: URL) throws {
         try load(fileURL: fileURL, bookmark: nil)
+        isScratch = false
     }
 
     /// Load an external file using an optional security‑scoped bookmark.
@@ -73,6 +76,7 @@ final class MarkdownModel: ObservableObject {
         } else {
             self.url = fileURL           // internal file – sandbox already allows write
         }
+        isScratch = false
 
         self.text = try String(contentsOf: url!, encoding: .utf8)
         watch(url!)
@@ -82,8 +86,16 @@ final class MarkdownModel: ObservableObject {
         if !securityAccess, let u = url {
             securityAccess = u.startAccessingSecurityScopedResource()
         }
+        let desiredURL = try Self.autoGenerateURL(for: text)
+
         if url == nil {
-            url = try Self.autoGenerateURL(for: text)
+            // First save of a scratch note: use desiredURL
+            url = desiredURL
+        } else if isScratch,
+                  url?.deletingPathExtension() != desiredURL.deletingPathExtension() {
+            // Scratch notes may auto-rename when first line changes
+            try? FileManager.default.moveItem(at: url!, to: desiredURL)
+            url = desiredURL
         }
         guard let fileURL = url else { return }
         let data = Data(text.utf8)
@@ -116,13 +128,18 @@ final class MarkdownModel: ObservableObject {
     }
 
     var currentFileName: String {
-        url?.deletingPathExtension().lastPathComponent ?? "Untitled"
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let first = trimmed.split(separator: "\n").first, !first.isEmpty {
+            return String(first.prefix(20))
+        }
+        return "Untitled"
     }
 
     // MARK: - Toolbar helpers
     func createNewFile() {
         url = nil
         text = ""
+        isScratch = true
     }
 
     func presentOpenPanel() {
