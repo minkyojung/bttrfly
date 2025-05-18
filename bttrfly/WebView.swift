@@ -54,17 +54,29 @@ struct WebView: NSViewRepresentable {
             super.init()
             // Swift -> JS: observe model.text changes
             cancellable = parent.model.$text
-                .dropFirst()
                 .debounce(for: .milliseconds(200), scheduler: RunLoop.main)
                 .sink { [weak self] md in
                     guard let self = self,
                           !self.isUpdatingFromJS,
                           md != self.lastHTMLFromJS,
                           let webView = self.web else { return }
-                    let escaped = md.replacingOccurrences(of: "`", with: "\\`")
-                    webView.evaluateJavaScript("""
-                        window.editor?.commands.setContent(`\(escaped)`);
-                    """, completionHandler: nil)
+
+                    // Keep local copy in sync so we don't resend identical HTML later
+                    self.lastHTMLFromJS = md
+
+                    // If the incoming Markdown/HTML string is empty, clear the editor;
+                    // otherwise, replace its contents.
+                    let js: String
+                    if md.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        js = "window.editor?.commands.clearContent();"
+                    } else {
+                        let escaped = md
+                            .replacingOccurrences(of: "\\", with: "\\\\")
+                            .replacingOccurrences(of: "`", with: "\\`")
+                            .replacingOccurrences(of: "\n", with: "\\n")
+                        js = "window.editor?.commands.setContent(`\(escaped)`);"
+                    }
+                    webView.evaluateJavaScript(js, completionHandler: nil)
                 }
         }
 

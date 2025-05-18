@@ -40,6 +40,9 @@ struct NoteView: View {
             // ③ 실제 에디터
             WebView(model: model)
                 .padding(.horizontal, 12)
+                .onAppear {
+                                    print("🪵 NoteView sees →", model.debugID)
+                                }
         }
         .frame(minWidth: 330, minHeight: 480)
     }

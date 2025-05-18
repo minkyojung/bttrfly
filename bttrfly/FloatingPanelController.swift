@@ -56,7 +56,7 @@ final class FloatingPanelController: NSWindowController, NSToolbarDelegate {
             defer: false)
 
         panel.hidesOnDeactivate = false
-        panel.level = .screenSaver
+        panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
@@ -113,11 +113,13 @@ final class FloatingPanelController: NSWindowController, NSToolbarDelegate {
             
         case .openFile:
             let item = NSToolbarItem(itemIdentifier: id)
+            item.toolTip = "⌘P"
             item.view = NSHostingView(rootView:
                 ToolbarButton(systemName: "magnifyingglass",
-                              tooltip: "Open",
-                              action: { [weak self] in self?.openDocument() })
+                              tooltip: "⌘+P",
+                              action: { [weak self] in self?.toggleSearchPanel() })
             )
+            item.view?.toolTip = "⌘P"     // ensure tooltip on the custom view itself
             return item
 
         case .newFile:
@@ -141,5 +143,8 @@ final class FloatingPanelController: NSWindowController, NSToolbarDelegate {
     }
     @objc private func openDocument() {
         model?.presentOpenPanel()
+    }
+    @objc private func toggleSearchPanel() {
+        SearchPanelController.shared.toggle(relativeTo: window)
     }
 }

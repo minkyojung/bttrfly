@@ -7,7 +7,8 @@ struct MainCommands: Commands {
         CommandGroup(after: .newItem) {   // inject into the existing "File" menu
             Divider()
             Button("Show Storage Folder") {
-                // Path: ~/Library/Containers/<bundle-id>/Data/Documents/Bttrfly
+                // Path: ~/Library/Containers/<bundle-id>/Data/Documents/Btt
+                
                 let baseDir = FileManager.default
                     .homeDirectoryForCurrentUser
                     .appendingPathComponent("Library/Containers")
@@ -29,6 +30,18 @@ struct MainCommands: Commands {
                 delegate.saveDocument(nil)
             }
             .keyboardShortcut("s", modifiers: .command)
+        }
+        
+        // Quick‑Open (⌘P) — replaces default “Print…”
+        CommandGroup(replacing: .printItem) {
+            Button("Quick Open…") {
+                if let keyWin = NSApp.keyWindow {
+                    SearchPanelController.shared.toggle(relativeTo: keyWin)
+                } else {
+                    SearchPanelController.shared.toggle(relativeTo: nil)
+                }
+            }
+            .keyboardShortcut("p", modifiers: .command)
         }
     }
     

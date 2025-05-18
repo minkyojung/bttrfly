@@ -36,6 +36,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ note: Notification) {
         panel = FloatingPanelController(root: NoteView(model: model), model: model)
         panel?.showWindow(nil)
+        // Share the same MarkdownModel with the global Search panel
+        SearchPanelController.shared.configure(model: model)
         autosave = AutosaveService(model: model)
         print("Documents path 👉",
               FileManager.default

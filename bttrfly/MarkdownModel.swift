@@ -3,8 +3,10 @@ import AppKit
 import UniformTypeIdentifiers
 
 final class MarkdownModel: ObservableObject {
+    let debugID = UUID()           // 디버그용 식별자
     @Published var text: String = ""
     @Published var url: URL?
+    @Published var currentFileName: String = "Untitled"
     /// true = note created in-app, false = opened existing file
     @Published var isScratch: Bool = true
     private var saveCancellable: AnyCancellable?
@@ -12,12 +14,23 @@ final class MarkdownModel: ObservableObject {
 
     init() {
         // Auto‑save whenever text changes (0.5 s debounce)
+        print("🪵 MarkdownModel init →", debugID)
         saveCancellable = $text
             .removeDuplicates()
             .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
             .sink { [weak self] _ in
                 try? self?.save()
             }
+    }
+
+    // MARK: - Public helper ------------------------------------------------
+    /// Open an existing Markdown file (inside or outside the sandbox).
+    /// Convenience wrapper so callers don’t need to care about bookmarks.
+    @MainActor
+    func open(url: URL) {
+        print("🪵 open() called for", url.lastPathComponent, "on model", debugID)
+        // Re‑use existing loader; ignore errors silently for now
+        try? load(fileURL: url)
     }
 
     /// Convenience: quick check for .md extension when binding
@@ -79,6 +92,7 @@ final class MarkdownModel: ObservableObject {
         isScratch = false
 
         self.text = try String(contentsOf: url!, encoding: .utf8)
+        self.currentFileName = String(url!.lastPathComponent.prefix(20))
         watch(url!)
     }
 
@@ -105,7 +119,7 @@ final class MarkdownModel: ObservableObject {
     // MARK: - File Watcher
     private func watch(_ url: URL) {
         source?.cancel()
-        fileDescriptor = open(url.path, O_EVTONLY)
+        fileDescriptor = Darwin.open(url.path, O_EVTONLY)
         guard fileDescriptor != -1 else { return }
 
         source = DispatchSource.makeFileSystemObjectSource(
@@ -127,18 +141,26 @@ final class MarkdownModel: ObservableObject {
         }
     }
 
-    var currentFileName: String {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let first = trimmed.split(separator: "\n").first, !first.isEmpty {
-            return String(first.prefix(20))
-        }
-        return "Untitled"
-    }
-
     // MARK: - Toolbar helpers
     func createNewFile() {
+        // ── Stop watching the previous file, if any ──
+        source?.cancel()
+        source = nil
+        if fileDescriptor != -1 {
+            close(fileDescriptor)
+            fileDescriptor = -1
+        }
+
+        // ── End security‑scoped access ──
+        if securityAccess, let u = url {
+            u.stopAccessingSecurityScopedResource()
+        }
+        securityAccess = false
+
+        // ── Reset model state for a fresh scratch note ──
         url = nil
         text = ""
+        currentFileName = "Untitled"
         isScratch = true
     }
 
