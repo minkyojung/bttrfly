@@ -2,6 +2,7 @@ import SwiftUI
 import WebKit
 import Combine
 import UniformTypeIdentifiers
+import AppKit            // for NSWorkspace.open(_: )
 
 struct WebView: NSViewRepresentable {
     @ObservedObject var model: MarkdownModel
@@ -13,10 +14,12 @@ struct WebView: NSViewRepresentable {
     func makeNSView(context: Context) -> WKWebView {
         let cfg = WKWebViewConfiguration()
         cfg.userContentController.add(context.coordinator, name: "didChange")
+        cfg.userContentController.add(context.coordinator, name: "openLink")
         let web = WKWebView(frame: .zero, configuration: cfg)
         // Enable Web Inspector for debugging
         web.configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
         web.navigationDelegate = context.coordinator
+        web.uiDelegate = context.coordinator        // handle target=_blank links
         // Make the WKWebView transparent so it sits directly on the blur layer
         web.setValue(false, forKey: "drawsBackground")   // disable white background
         if let scrollView = web.enclosingScrollView {
@@ -42,7 +45,7 @@ struct WebView: NSViewRepresentable {
     
     
 
-    final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate {
         let parent: WebView
         var web: WKWebView?
         private var cancellable: AnyCancellable?
@@ -80,11 +83,23 @@ struct WebView: NSViewRepresentable {
                 }
         }
 
-        // JS -> Swift: receive HTML updates
+        // JS -> Swift: receive HTML updates and openLink
         func userContentController(_ userContentController: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
-            print("➡️ onUpdate", Date().timeIntervalSince1970)
-            guard let html = message.body as? String else { return }
+
+            if message.name == "openLink",
+               let urlString = message.body as? String,
+               let url = URL(string: urlString) {
+                print("[Swift] got openLink →", url.absoluteString)
+                let ok = NSWorkspace.shared.open(url)
+                print("[Swift] NSWorkspace.open returned", ok)
+                return
+            }
+
+            // default: didChange markdown text
+            guard message.name == "didChange",
+                  let html = message.body as? String else { return }
+
             DispatchQueue.main.async {
                 self.isUpdatingFromJS = true
                 self.lastHTMLFromJS = html
@@ -101,6 +116,41 @@ struct WebView: NSViewRepresentable {
             webView.evaluateJavaScript("window.editor?.commands.setContent(`\(escaped)`);")
             webView.becomeFirstResponder()   // make WKWebView the key responder
             webView.evaluateJavaScript("window.editor?.commands.focus();")   // focus the tiptap editor
+        }
+        
+        // macOS: open any external http/https link in the default browser
+        func webView(_ webView: WKWebView,
+                     decidePolicyFor navigationAction: WKNavigationAction,
+                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+
+            // If the target frame is nil → means window.open / target=_blank
+            let isLinkClick = navigationAction.navigationType == .linkActivated
+            let isNewWindow  = navigationAction.targetFrame == nil
+
+            if (isLinkClick || isNewWindow),
+               let url = navigationAction.request.url,
+               ["http", "https"].contains(url.scheme?.lowercased() ?? "") {
+
+                print("[Swift] decidePolicyFor link →", url.absoluteString)
+                let ok = NSWorkspace.shared.open(url)
+                print("[Swift] NSWorkspace.open returned", ok)
+                decisionHandler(.cancel)   // don't load internally
+                return
+            }
+            decisionHandler(.allow)
+        }
+        
+        // WKUIDelegate – handle target="_blank" or window.open links
+        func webView(_ webView: WKWebView,
+                     createWebViewWith configuration: WKWebViewConfiguration,
+                     for navigationAction: WKNavigationAction,
+                     windowFeatures: WKWindowFeatures) -> WKWebView? {
+            print("[Swift] createWebViewWith for target=_blank →", navigationAction.request.url?.absoluteString ?? "nil")
+            if let url = navigationAction.request.url {
+                let ok = NSWorkspace.shared.open(url)
+                print("[Swift] NSWorkspace.open returned", ok)
+            }
+            return nil        // cancel creation of a new WKWebView
         }
         
         

@@ -17,15 +17,31 @@ struct MyFloatingMarkdownApp: App {
         // A hidden settings scene is enough to satisfy SwiftUI’s requirement
         // for at least one `Scene`, while avoiding an empty window opening.
         Settings {
-            ShortcutPrefs()
-            EmptyView()          // nothing visible
+            TabView {
+                ShortcutPrefs()
+                    .tabItem { Label("Shortcuts", systemImage: "keyboard") }
+
+                GeneralPrefs()
+                    .tabItem { Label("General", systemImage: "gearshape") }
+            }
+            .frame(width: 420, height: 240)
         }
         .commands {
-            MainCommands()       // ✅ your “Open…” / “Save…” items
+            MainCommands()
         }
     }
     
     
+}
+
+struct GeneralPrefs: View {
+    @AppStorage("showDefaultFolder") private var showDefaultFolder = true
+    var body: some View {
+        Form {
+            Toggle("Show Bttrfly folder in Favorites", isOn: $showDefaultFolder)
+        }
+        .padding(20)
+    }
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {

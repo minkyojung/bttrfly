@@ -39,11 +39,15 @@ struct NoteView: View {
             
             // ③ 실제 에디터
             WebView(model: model)
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 18)
+                .padding(.top, 36)            // ↓ 살짝 내려서 타이틀바와 간격
+                .ignoresSafeArea(.container, edges: .top)
                 .onAppear {
                                     print("🪵 NoteView sees →", model.debugID)
                                 }
         }
-        .frame(minWidth: 330, minHeight: 480)
+        // lock width at 330 pt (min = ideal = max)
+        .frame(minWidth: 400, idealWidth: 400, maxWidth: 400,
+               minHeight: 390)
     }
 }

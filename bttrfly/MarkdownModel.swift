@@ -10,6 +10,8 @@ final class MarkdownModel: ObservableObject {
     /// true = note created in-app, false = opened existing file
     @Published var isScratch: Bool = true
     private var saveCancellable: AnyCancellable?
+    /// Keeps the window title synced with the first 20 characters of the note
+    private var titleCancellable: AnyCancellable?
     private var securityAccess: Bool = false
 
     init() {
@@ -21,6 +23,28 @@ final class MarkdownModel: ObservableObject {
             .sink { [weak self] _ in
                 try? self?.save()
             }
+        // Live‑update the window title while typing (scratch notes only)
+        titleCancellable = $text
+            .receive(on: RunLoop.main)     // UI updates must occur on main thread
+            .sink { [weak self] value in
+                guard let self = self, self.isScratch else { return }
+
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                let firstLine = trimmed.split(separator: "\n").first.map(String.init) ?? ""
+                let candidate = firstLine.isEmpty ? "Untitled" : String(firstLine.prefix(20))
+
+                if self.currentFileName != candidate {
+                    self.currentFileName = candidate
+                }
+            }
+    }
+
+    /// Sanitize a string so it can be used safely as a macOS filename.
+    private static func safeFilename(from raw: String) -> String {
+        let invalid = CharacterSet(charactersIn: "/:\\?%*|\"<>")
+        let cleaned = raw.components(separatedBy: invalid).joined()
+        let trimmed = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "Untitled" : trimmed
     }
 
     // MARK: - Public helper ------------------------------------------------
@@ -48,12 +72,11 @@ final class MarkdownModel: ObservableObject {
             .appendingPathComponent("Data/Documents/Bttrfly", isDirectory: true)
         try FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
 
-        // filename = first line or "Untitled"
-        var base = "Untitled"
+        // filename base = sanitized first line (max 20 chars) or "Untitled"
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let first = trimmed.split(separator: "\n").first, !first.isEmpty {
-            base = String(first.prefix(20))
-        }
+        let firstLine = trimmed.split(separator: "\n").first.map(String.init) ?? ""
+        let rawBase = firstLine.isEmpty ? "Untitled" : String(firstLine.prefix(20))
+        var base = safeFilename(from: rawBase)
 
         // ensure uniqueness
         var candidate = base
@@ -139,6 +162,7 @@ final class MarkdownModel: ObservableObject {
         if securityAccess, let u = url {
             u.stopAccessingSecurityScopedResource()
         }
+        titleCancellable?.cancel()
     }
 
     // MARK: - Toolbar helpers

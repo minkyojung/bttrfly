@@ -138,7 +138,7 @@ final class FloatingPanelController: NSWindowController, NSToolbarDelegate {
     }
 
     // MARK: - Actions
-    @objc private func newDocument() {
+    @objc func newDocument() {
         model?.createNewFile()
     }
     @objc private func openDocument() {

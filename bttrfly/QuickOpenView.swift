@@ -8,11 +8,13 @@
 import SwiftUI
 import AppKit
 import Combine
+import UniformTypeIdentifiers
 
 /// MVP for Quick‑Open: choose a vault folder, then list all .md files.
 /// Search/filter will come next.
 struct QuickOpenView: View {
     @ObservedObject var model: MarkdownModel
+    @AppStorage("showDefaultFolder") private var showDefaultFolder = true
 
     // MARK: - State
     @State private var vaultURL: URL? = nil
@@ -25,6 +27,8 @@ struct QuickOpenView: View {
     @State private var hoverDropdown = false
     @State private var pinned: [URL] = loadPinnedFolders()
     @State private var hoverAdd = false
+    @State private var dragging: URL? = nil      // current item being dragged
+    @State private var keyMonitor: Any? = nil    // local NSEvent monitor for ⏎ key
 
     var body: some View {
         VStack(spacing: 12) {
@@ -61,15 +65,32 @@ struct QuickOpenView: View {
                             PinnedFolderChip(
                                 url: url,
                                 isSelected: vaultURL == url,
+                                dragging: $dragging,
                                 select: { selected in
-                                    _ = selected.startAccessingSecurityScopedResource() // (idempotent if already open)
+                                    // Keep security scope open (idempotent if already active)
+                                    _ = selected.startAccessingSecurityScopedResource()
+
+                                    // Switch vault & refresh file list
                                     vaultURL = selected
                                     files = scanMarkdown(in: selected)
-                                    model.open(url: selected)
+                                    query = ""       // clear filter
+
+                                    // Just highlight first note (for convenience); user can double‑click or press ⏎ to open
+                                    selection = files.first
                                 },
                                 remove: { removed in
                                     removePinned(removed)
                                 })
+                            // ── Drag to re‑order ─────────────────────────────
+                            .onDrag {
+                                dragging = url               // remember source
+                                return NSItemProvider(object: url as NSURL)   // use file‑URL UTType
+                            }
+                            .onDrop(of: [UTType.fileURL.identifier],
+                                    delegate: FolderReorderDropDelegate(item: url,
+                                                                        items: $pinned,
+                                                                        dragging: $dragging,
+                                                                        save: { savePinnedFolders($0) }))
                         }
                         // Add new folder button
                         Button(action: pickAndPin) {
@@ -94,22 +115,15 @@ struct QuickOpenView: View {
 
             // ── Notes list ──────────────────────────────────
             List(selection: $selection) {
-                            ForEach(displayed, id: \.self) { url in
-                                // ⏎(Enter) = defaultAction → 파일 열기
-                                Button(action: {
-                                    model.open(url: url)
-                                    print("🪵 QuickOpen opening", url.lastPathComponent, "on model", model.debugID)
-                                }) {
-                                    NoteRow(url: url,
-                                            isCurrent: false,
-                                            isSelected: selection == url)
-                                }
-                                .buttonStyle(.plain)                 // 시각적 변화 없도록
-                                .keyboardShortcut(.defaultAction)    // Return/Enter 트리거
-                                .tag(url)
-                                .listRowInsets(EdgeInsets())
-                            }
-                        }
+                ForEach(displayed, id: \.self) { url in
+                    NoteRow(url: url,
+                            isCurrent: false,
+                            isSelected: selection == url)
+                        .contentShape(Rectangle())          // 전체 행 클릭 가능
+                        .tag(url)
+                        .listRowInsets(EdgeInsets())
+                }
+            }
             .listStyle(.plain)
             .listRowSeparator(.hidden)   // hide default separator (macOS 14+)
             .accentColor(.clear)         // suppress system green selection tint
@@ -118,6 +132,7 @@ struct QuickOpenView: View {
                 ListGridStyler().allowsHitTesting(false) // remove NSTableView grid + spacing
             )
             .focused($listFocused)
+            .background(DoubleClickHandler(current: $selection, open: model.open))
             // 🔹 첫 표시 때만: 첫 행 하이라이트 + 리스트 포커스
                         .onAppear {
                             if selection == nil { selection = displayed.first }
@@ -129,7 +144,47 @@ struct QuickOpenView: View {
             }
         }
         .onAppear {
+            // Sync pinned array with preference
+            let core = defaultBttrflyFolder()
+            if !showDefaultFolder {
+                pinned.removeAll { $0 == core }
+            } else if !pinned.contains(core) {
+                pinned.insert(core, at: 0)
+            }
             print("🪵 QuickOpenView sees →", model.debugID)
+
+            // ⏎ / Enter opens the currently‑selected note, but only if focus is in the Quick‑Open list
+            keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { ev in
+                // 36 = Return, 76 = Enter (numeric keypad)
+                guard ev.keyCode == 36 || ev.keyCode == 76 else { return ev }
+
+                // Only handle if firstResponder is an NSTableView (our list)
+                if let responder = NSApp.keyWindow?.firstResponder,
+                   responder.isKind(of: NSTableView.self),
+                   let url = selection {
+                    model.open(url: url)
+                    return nil   // prevent default to avoid beep
+                }
+                return ev   // otherwise, let the editor or other views handle it
+            }
+        }
+        .onChange(of: showDefaultFolder) { on in
+            let core = defaultBttrflyFolder()
+            if on {
+                if !pinned.contains(core) {
+                    pinned.insert(core, at: 0)
+                    savePinnedFolders(pinned)
+                }
+            } else {
+                removePinned(core)
+            }
+        }
+        .onDisappear {
+            // remove key monitor if still active
+            if let m = keyMonitor {
+                NSEvent.removeMonitor(m)
+                keyMonitor = nil
+            }
         }
         .frame(height: 320)                         // allow width to flex with parent
         .padding(.horizontal, 12)
@@ -221,40 +276,67 @@ struct QuickOpenView: View {
     }
 }
 
+// MARK: - Drag‑&‑drop re‑order support
+private struct FolderReorderDropDelegate: DropDelegate {
+    let item: URL                 // destination chip
+    @Binding var items: [URL]     // pinned array binding
+    @Binding var dragging: URL?   // currently dragged chip
+    let save: ([URL]) -> Void     // persist order
+
+    func dropEntered(info: DropInfo) {
+        guard let dragging = dragging, dragging != item else { return }
+
+        if let from = items.firstIndex(of: dragging),
+           let to = items.firstIndex(of: item) {
+            withAnimation {
+                items.move(fromOffsets: IndexSet(integer: from),
+                           toOffset: to > from ? to + 1 : to)
+            }
+        }
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        save(items)       // persist new order
+        dragging = nil
+        return true
+    }
+}
+
 // MARK: - Pinned folder chip
 private struct PinnedFolderChip: View {
     let url: URL
     let isSelected: Bool
+    @Binding var dragging: URL?
     let select: (URL) -> Void
     let remove: (URL) -> Void
     @Environment(\.colorScheme) private var scheme
     @State private var hover = false
+    @AppStorage("showDefaultFolder") private var showDefaultFolder = true
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             // Main chip tap == select folder
-            Button(action: { select(url) }) {
-                Label(url.lastPathComponent, systemImage: "folder")
-                    .font(.caption2)                      // slightly smaller
-                    .foregroundColor(
-                        isSelected ? Color.primary :
-                            (hover ? Color.secondary : Color.secondary.opacity(0.65))
-                    )
-                    .padding(.vertical, 6)    // taller
-                    .padding(.horizontal, 10)  // wider side padding
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(
-                                Color.secondary
-                                    .opacity(hover ? 0.18 : 0.08)
-                            )
-                    )
-                    .animation(.easeInOut(duration: 0.08), value: hover)
-            }
-            .buttonStyle(.plain)
+            Label(url.lastPathComponent, systemImage: "folder")
+                .font(.caption2)                      // slightly smaller
+                .foregroundColor(
+                    isSelected ? Color.primary :
+                        (hover ? Color.secondary : Color.secondary.opacity(0.65))
+                )
+                .padding(.vertical, 6)    // taller
+                .padding(.horizontal, 10)  // wider side padding
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(
+                            Color.secondary
+                                .opacity(hover ? 0.18 : 0.08)
+                        )
+                )
+                .animation(.easeInOut(duration: 0.08), value: hover)
+                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .onTapGesture { select(url) }
 
             // ── Hover delete ("x") button ──
-            if hover {
+            if hover && !(url == defaultBttrflyFolder() && showDefaultFolder) {
                 Button(action: { remove(url) }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 6, weight: .bold))
@@ -269,7 +351,9 @@ private struct PinnedFolderChip: View {
                 .offset(x: 3, y: -4)    // just outside the chip
             }
         }
+        .opacity(dragging == url ? 0 : 1)   // hide original while dragging
         .onHover { hover = $0 }
+        .help(url.path)      // show absolute path on hover
     }
 }
 
@@ -335,26 +419,59 @@ private func saveRecentVault(_ url: URL) {
 }
 
 // Favourites (persistent, security‑scoped bookmarks)
+/// Returns the sandbox‑local “Bttrfly” folder inside Documents, creating it if missing.
+private func defaultBttrflyFolder() -> URL {
+    // Sandbox‑container path:  ~/Library/Containers/<bundle-id>/Data/Documents/Bttrfly
+    let bundleID = Bundle.main.bundleIdentifier ?? ""
+    let base = FileManager.default
+        .homeDirectoryForCurrentUser
+        .appendingPathComponent("Library/Containers")
+        .appendingPathComponent(bundleID)
+        .appendingPathComponent("Data/Documents/Bttrfly", isDirectory: true)
+
+    // Ensure the directory exists
+    try? FileManager.default.createDirectory(at: base,
+                                             withIntermediateDirectories: true)
+    return base
+}
+
+/// Load favourites from stored security‑scoped bookmarks, then deduplicate while preserving order.
 private func loadPinnedFolders() -> [URL] {
+    // 1) Resolve saved bookmarks
     let datas = UserDefaults.standard.array(forKey: "pinnedBookmarks") as? [Data] ?? []
     var urls: [URL] = []
-
     for data in datas {
         var isStale = false
         if let url = try? URL(resolvingBookmarkData: data,
                               options: [.withSecurityScope],
                               relativeTo: nil,
                               bookmarkDataIsStale: &isStale),
-           !isStale
-        {
-            if url.startAccessingSecurityScopedResource() {   // keep it open
-                urls.append(url)
-            }
+           !isStale,
+           url.startAccessingSecurityScopedResource() {
+            urls.append(url)
         }
     }
-    return urls
+
+    // 2) Deduplicate by standardized, case‑folded path while preserving order
+    var seen = Set<String>()
+    var unique: [URL] = []
+    for url in urls {
+        let key = url.standardizedFileURL.path.lowercased()
+        if !seen.contains(key) {
+            unique.append(url)
+            seen.insert(key)
+        }
+    }
+    // 3) Ensure the default Bttrfly folder is always present as a favourite
+    let core = defaultBttrflyFolder()
+    if !unique.contains(core) {
+        unique.insert(core, at: 0)      // put it first
+        savePinnedFolders(unique)       // persist bookmark list
+    }
+    return unique
 }
 
+/// Persist user‑pinned folders.
 private func savePinnedFolders(_ urls: [URL]) {
     let datas: [Data] = urls.compactMap {
         try? $0.bookmarkData(options: [.withSecurityScope],
@@ -384,3 +501,72 @@ private struct ListGridStyler: NSViewRepresentable {
         return nil
     }
 }
+
+
+// MARK: - NSTableView double‑click support
+private struct DoubleClickHandler: NSViewRepresentable {
+    @Binding var current: URL?
+    let open: (URL) -> Void
+
+    func makeNSView(context: Context) -> NSView { NSView() }
+
+    func updateNSView(_ v: NSView, context: Context) {
+        DispatchQueue.main.async {            // wait until List is in the hierarchy
+            guard let table = locateTable(starting: v) else { return }
+            // Preserve original single‑click target once
+            if context.coordinator.originalTarget == nil {
+                context.coordinator.originalTarget = table.target as AnyObject
+            }
+
+            // Route actions through Coordinator
+            table.target = context.coordinator
+            table.action = #selector(Coordinator.onAction(_:))          // single click
+            table.doubleAction = #selector(Coordinator.didDoubleClick(_:)) // double click
+            context.coordinator.current = $current
+            context.coordinator.open = open
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class Coordinator: NSObject {
+        var current: Binding<URL?> = .constant(nil)
+        var open: (URL) -> Void = { _ in }
+        weak var originalTarget: AnyObject?   // SwiftUI가 설치한 원래 타깃
+
+        /// 싱글‑클릭 전달용: SwiftUI 쪽 selection 업데이트 유지
+        @objc func onAction(_ sender: Any?) {
+            guard let orig = originalTarget else { return }
+            let sel = Selector(("onAction:"))
+            if orig.responds(to: sel) {
+                _ = orig.perform(sel, with: sender)
+            }
+        }
+
+        @objc func didDoubleClick(_ sender: Any?) {
+            if let url = current.wrappedValue { open(url) }
+        }
+    }
+
+    // ── Find the nearest NSTableView (ascend first, then descend) ──
+    private func locateTable(starting view: NSView?) -> NSTableView? {
+        var node = view
+        while let current = node {
+            if let t = searchDown(current) { return t }   // look inside
+            node = current.superview                     // climb up
+        }
+        return nil
+    }
+
+    /// Depth‑first search **down** the subtree rooted at `view`
+    private func searchDown(_ view: NSView) -> NSTableView? {
+        if let t = view as? NSTableView { return t }
+        for sub in view.subviews {
+            if let t = searchDown(sub) { return t }
+        }
+        return nil
+    }
+}
+
+
+

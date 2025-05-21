@@ -4,6 +4,14 @@ struct MainCommands: Commands {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate: AppDelegate   // delegate 접근
     
     var body: some Commands {
+        // Replace default “New” (⌘N) with our custom new‑note action
+        CommandGroup(replacing: .newItem) {
+            Button("New Note") {
+                delegate.panel?.newDocument()
+            }
+            .keyboardShortcut("n", modifiers: .command)
+        }
+        
         CommandGroup(after: .newItem) {   // inject into the existing "File" menu
             Divider()
             Button("Show Storage Folder") {
