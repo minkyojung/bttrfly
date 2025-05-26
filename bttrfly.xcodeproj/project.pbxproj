@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D80635152DE4403E00CF10A3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = D80635142DE4403E00CF10A3 /* Sparkle */; };
 		D8659AA92DCB617B00BABDE6 /* EditorResources in Resources */ = {isa = PBXBuildFile; fileRef = D8659AA82DCB617B00BABDE6 /* EditorResources */; };
 		D8659AB32DCCD55A00BABDE6 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = D8659AB22DCCD55A00BABDE6 /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
@@ -59,6 +60,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D8659AB32DCCD55A00BABDE6 /* KeyboardShortcuts in Frameworks */,
+				D80635152DE4403E00CF10A3 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -129,6 +131,7 @@
 			name = bttrfly;
 			packageProductDependencies = (
 				D8659AB22DCCD55A00BABDE6 /* KeyboardShortcuts */,
+				D80635142DE4403E00CF10A3 /* Sparkle */,
 			);
 			productName = bttrfly;
 			productReference = D8748B622DBDF0D8008CD6BE /* bttrfly.app */;
@@ -214,6 +217,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				D8659AAE2DCCD3A100BABDE6 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				D80635132DE4403E00CF10A3 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D8748B632DBDF0D8008CD6BE /* Products */;
@@ -416,17 +420,19 @@
 				CODE_SIGN_ENTITLEMENTS = bttrfly/bttrfly.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 100;
 				DEVELOPMENT_TEAM = 2JY3Y5R6GS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Bttrfly;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = williamjung.bttrfly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -442,17 +448,19 @@
 				CODE_SIGN_ENTITLEMENTS = bttrfly/bttrfly.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 100;
 				DEVELOPMENT_TEAM = 2JY3Y5R6GS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Bttrfly;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = williamjung.bttrfly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -570,6 +578,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		D80635132DE4403E00CF10A3 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.7.0;
+			};
+		};
 		D8659AAE2DCCD3A100BABDE6 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
@@ -581,6 +597,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		D80635142DE4403E00CF10A3 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D80635132DE4403E00CF10A3 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
 		D8659AB22DCCD55A00BABDE6 /* KeyboardShortcuts */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = D8659AAE2DCCD3A100BABDE6 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;

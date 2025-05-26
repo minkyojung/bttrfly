@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>SUPublicEDKey</key>
+	<string>jWGEIVTzvuMF4HvzWDFiqo97DN9/JiGq/uz5SWWkdnY=</string>
+	<key>SUNormalizeDeltaUpdates</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://minkyojung.github.io/bttrfly-updates/appcast.xml</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>PretendardVariable.ttf</string>

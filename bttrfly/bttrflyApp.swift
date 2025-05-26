@@ -5,11 +5,13 @@
 //  Created by William Jung on 4/27/25.
 //
 
+
 import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 import KeyboardShortcuts
 import QuartzCore
+import Sparkle
 
 
 enum AppTheme: Int, CaseIterable, Identifiable {
@@ -235,6 +237,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var autosave: AutosaveService?
     /// Opacity for the welcome‑panel dim layer
     private let welcomeDimAlpha: CGFloat = 0.45
+    /// Sparkle updater controller
+    private var updaterController: SPUStandardUpdaterController?
     /// Flag to ensure the bundled quick guide is only inserted once
     @AppStorage("didInsertQuickGuide") private var didInsertQuickGuide = false
 
@@ -263,6 +267,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             createMainPanel()
         }
 
+        // Start Sparkle automatic updater (checks on launch)
+        updaterController = SPUStandardUpdaterController(
+            startingUpdater: true,
+            updaterDelegate: nil,
+            userDriverDelegate: nil
+        )
         // Register global shortcut
         KeyboardShortcuts.onKeyUp(for: .showNote) { [weak self] in
             self?.toggleNote()
