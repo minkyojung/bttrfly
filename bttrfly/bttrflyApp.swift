@@ -9,6 +9,33 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 import KeyboardShortcuts
+import QuartzCore
+
+
+enum AppTheme: Int, CaseIterable, Identifiable {
+    case system, light, dark
+    var id: Int { rawValue }
+    /// Returns the appropriate SwiftUI `ColorScheme` or `nil` (follow system)
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .light:  return .light
+        case .dark:   return .dark
+        }
+    }
+}
+
+/// A container that updates the color scheme live whenever the user changes the theme
+struct ThemedRootView: View {
+    @AppStorage("appTheme") private var appThemeRaw: Int = AppTheme.system.rawValue
+    let model: MarkdownModel
+    var body: some View {
+        NoteView(model: model)
+            .preferredColorScheme(
+                AppTheme(rawValue: appThemeRaw)?.colorScheme
+            )
+    }
+}
 
 @main
 struct MyFloatingMarkdownApp: App {
@@ -17,14 +44,8 @@ struct MyFloatingMarkdownApp: App {
         // A hidden settings scene is enough to satisfy SwiftUI’s requirement
         // for at least one `Scene`, while avoiding an empty window opening.
         Settings {
-            TabView {
-                ShortcutPrefs()
-                    .tabItem { Label("Shortcuts", systemImage: "keyboard") }
-
-                GeneralPrefs()
-                    .tabItem { Label("General", systemImage: "gearshape") }
-            }
-            .frame(width: 420, height: 240)
+            CombinedPrefs()
+                .frame(width: 600, height: 420)
         }
         .commands {
             MainCommands()
@@ -36,9 +57,170 @@ struct MyFloatingMarkdownApp: App {
 
 struct GeneralPrefs: View {
     @AppStorage("showDefaultFolder") private var showDefaultFolder = true
+    @AppStorage("appTheme") private var appThemeRaw: Int = AppTheme.system.rawValue
     var body: some View {
         Form {
             Toggle("Show Bttrfly folder in Favorites", isOn: $showDefaultFolder)
+
+            Section("Appearance") {
+                Picker("Theme", selection: $appThemeRaw) {
+                    Text("Automatic").tag(AppTheme.system.rawValue)
+                    Text("Light").tag(AppTheme.light.rawValue)
+                    Text("Dark").tag(AppTheme.dark.rawValue)
+                }
+                .pickerStyle(.radioGroup)
+            }
+        }
+        .padding(20)
+    }
+}
+
+// MARK: - Combined settings (single pane)
+struct CombinedPrefs: View {
+    // existing stored prefs
+    @AppStorage("appTheme") private var appThemeRaw = AppTheme.system.rawValue
+    @AppStorage("showDefaultFolder") private var showDefaultFolder = true
+    @AppStorage("statsNoteCount") private var statsNoteCount: Int = 0
+    @AppStorage("statsCharCount") private var statsCharCount: Int = 0
+    @AppStorage("statsFocusSeconds") private var statsFocusSeconds: Int = 0
+    @AppStorage("statsTodoDone")     private var statsTodoDone: Int = 0
+    @AppStorage("statsSessionStart") private var statsSessionStart: Double = 0   // UNIX timestamp; 0 = no active session
+    @State private var refreshTick = Date()     // forces view update every minute
+
+    // static developer info
+    private let devName  = "William Jung"
+    private let devEmail = "williamjung0130@gmail.com"
+    private let blogURL  = URL(string: "https://bttrflynote.substack.com/")!
+
+    var body: some View {
+        Form {
+            // ── Application ─────────────────────────
+            Section("App") {
+                HStack {
+                    Label("Theme", systemImage: "paintbrush")
+                    Spacer()
+                    Picker("", selection: $appThemeRaw) {
+                        Text("Automatic").tag(AppTheme.system.rawValue)
+                        Text("Light").tag(AppTheme.light.rawValue)
+                        Text("Dark").tag(AppTheme.dark.rawValue)
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                }
+
+                Toggle(isOn: $showDefaultFolder) {
+                    Label("Show Bttrfly folder in Favorites", systemImage: "folder")
+                }
+
+                HStack {
+                    Label("Note Window Shortcut", systemImage: "keyboard")
+                    Spacer()
+                    KeyboardShortcuts.Recorder("", name: .showNote)
+                }
+            }
+
+            // ── Stats ─────────────────────────
+            Section("Stats") {
+                HStack {
+                    Label("Notes", systemImage: "doc.plaintext")
+                    Spacer()
+                    Text("\(statsNoteCount)")
+                }
+                HStack {
+                    Label("Characters", systemImage: "character.cursor.ibeam")
+                    Spacer()
+                    Text(statsCharCount.formatted())
+                }
+                HStack {
+                    Label("Focus Time", systemImage: "timer")
+                    Spacer()
+                    Text(timeString(from: totalFocusSeconds))
+                }
+                HStack {
+                    Label("Todos Done", systemImage: "checkmark.square")
+                    Spacer()
+                    Text("\(statsTodoDone)")
+                }
+            }
+
+            // ── Developer ───────────────────────────
+            Section("Developer") {
+                HStack {
+                    Label("Name", systemImage: "person")
+                    Spacer()
+                    Text(devName)
+                }
+
+                HStack {
+                    Label("Email", systemImage: "envelope")
+                    Spacer()
+                    Button(devEmail) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(devEmail, forType: .string)
+                    }
+                    .buttonStyle(.link)
+                    .help("Click to copy")
+                }
+
+                HStack {
+                    Label("Blog", systemImage: "link")
+                    Spacer()
+                    Link(blogURL.absoluteString, destination: blogURL)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .padding(.top, 8)
+        .id(refreshTick)              // force redraw when the tick changes
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
+            refreshTick = Date()
+        }
+    }
+    // Convert seconds to "Hh Mm" string
+    private func timeString(from seconds: Int) -> String {
+        let hrs = seconds / 3600
+        let mins = (seconds % 3600) / 60
+        return "\(hrs)h \(mins)m"
+    }
+    // Total focus = stored seconds + current running session (if any)
+    private var totalFocusSeconds: Int {
+        let running = statsSessionStart > 0 ? Int(Date().timeIntervalSince1970 - statsSessionStart) : 0
+        return statsFocusSeconds + running
+    }
+}
+
+// MARK: - Developer profile preferences
+// MARK: - Developer profile (read-only)
+struct ProfilePrefs: View {
+    private let name  = "William Jung"
+    private let email = "williamjung0130@gmail.com"
+    private let blog  = URL(string: "https://bttrflynote.substack.com/")!
+
+    var body: some View {
+        Form {
+            Section("Developer") {
+                HStack {
+                    Text("Name")
+                    Spacer()
+                    Text(name)
+                }
+
+                HStack {
+                    Text("Email")
+                    Spacer()
+                    Button(email) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(email, forType: .string)
+                    }
+                    .buttonStyle(.link)
+                    .help("Click to copy")
+                }
+            }
+
+            Section("Blog") {
+                Link(blog.absoluteString, destination: blog)
+            }
         }
         .padding(20)
     }
@@ -46,19 +228,40 @@ struct GeneralPrefs: View {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var panel: FloatingPanelController?
+    private var welcomePanel: NSWindowController?
+    private let hasSeenWelcomeKey = "bttrflyHasSeenWelcome"
+    private var onboarding: OnboardingController?
     let model = MarkdownModel()
     private var autosave: AutosaveService?
+    /// Opacity for the welcome‑panel dim layer
+    private let welcomeDimAlpha: CGFloat = 0.45
+    /// Flag to ensure the bundled quick guide is only inserted once
+    @AppStorage("didInsertQuickGuide") private var didInsertQuickGuide = false
 
     func applicationDidFinishLaunching(_ note: Notification) {
-        panel = FloatingPanelController(root: NoteView(model: model), model: model)
-        panel?.showWindow(nil)
-        // Share the same MarkdownModel with the global Search panel
-        SearchPanelController.shared.configure(model: model)
-        autosave = AutosaveService(model: model)
-        print("Documents path 👉",
-              FileManager.default
-                .homeDirectoryForCurrentUser
-                .appendingPathComponent("Documents").path)
+        #if DEBUG
+        // Always restart onboarding in DEBUG builds
+        UserDefaults.standard.removeObject(forKey: "bttrflyHasSeenOnboarding")
+        UserDefaults.standard.removeObject(forKey: "bttrflySaveFolder")
+        if CommandLine.arguments.contains("-resetGuide") {
+            UserDefaults.standard.removeObject(forKey: "didInsertQuickGuide")
+        }
+        #endif
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(didPickFolder),
+                                               name: .bttrflyDidPickFolder,
+                                               object: nil)
+
+        onboarding = OnboardingController(model: model)
+        onboarding?.presentIfNeeded()
+
+        // Restore saved folder (if any) into the model
+        model.saveFolder = UserDefaults.standard.url(forKey: "bttrflySaveFolder")
+
+        // 폴더가 이미 설정된 경우에만 바로 메인 창 생성
+        if model.saveFolder != nil {
+            createMainPanel()
+        }
 
         // Register global shortcut
         KeyboardShortcuts.onKeyUp(for: .showNote) { [weak self] in
@@ -102,5 +305,149 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             panel.showWindow(nil)
             panel.window?.makeKey()        // bring to front
         }
+    }
+
+    @objc private func didPickFolder() {          // notification receiver
+        createMainPanel()
+    }
+
+    private func createMainPanel() {
+        guard panel == nil else { return }        // already created once
+        let rootView = ThemedRootView(model: model)
+
+        panel = FloatingPanelController(root: rootView, model: model)
+        panel?.showWindow(nil)
+        SearchPanelController.shared.configure(model: model)
+        autosave = AutosaveService(model: model)
+        model.startSession()     // begin focus timer for initial window
+
+        // Insert bundled quick guide on first run
+        if let folder = model.saveFolder {
+            insertQuickGuideIfNeeded(at: folder)
+        }
+    }
+
+    // MARK: - Quick guide insertion
+    /// Copies the bundled quick‑guide into the chosen folder on first run and opens it.
+    private func insertQuickGuideIfNeeded(at folder: URL) {
+        let destURL = folder.appendingPathComponent("Quick_Guide_for_Bttrfly.md")
+
+        // ① Always remove the old guide so edits in the app bundle propagate immediately
+        if FileManager.default.fileExists(atPath: destURL.path) {
+            try? FileManager.default.removeItem(at: destURL)
+        }
+
+        // ② Copy the latest guide from the app bundle
+        if let srcURL = Bundle.main.url(forResource: "Guide", withExtension: "md") {
+            try? FileManager.default.copyItem(at: srcURL, to: destURL)
+        }
+
+        // ③ Load the (fresh) guide into the editor
+        try? model.load(fileURL: destURL)
+
+        // ④ Record that we've at least inserted once (optional—but harmless)
+        didInsertQuickGuide = true
+    }
+
+    // MARK: - First‑run welcome
+    private func presentWelcomeIfNeeded() {
+        // Skip if user dismissed it before
+        guard !UserDefaults.standard.bool(forKey: hasSeenWelcomeKey) else { return }
+
+        NSApp.activate(ignoringOtherApps: true)
+
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 260),
+            styleMask: [.titled, .fullSizeContentView],
+            backing: .buffered,
+            defer: false)
+        panel.isFloatingPanel = true
+        panel.level = .modalPanel
+        panel.titleVisibility = .hidden
+        panel.titlebarAppearsTransparent = true
+        panel.isMovable = false
+        panel.isReleasedWhenClosed = false
+
+        let wrapper = NSView(frame: panel.contentRect(forFrameRect: panel.frame))
+        wrapper.wantsLayer = true
+        wrapper.layer?.cornerRadius = 14
+
+        let blur = NSVisualEffectView(frame: wrapper.bounds)
+        blur.autoresizingMask = [.width, .height]
+        blur.material = .underWindowBackground                     // configurable
+        blur.state = .active
+        wrapper.addSubview(blur)
+
+        let dim = NSView(frame: wrapper.bounds)
+        dim.autoresizingMask = [.width, .height]
+        dim.wantsLayer = true
+        dim.layer?.backgroundColor = NSColor.black.withAlphaComponent(welcomeDimAlpha).cgColor
+        wrapper.addSubview(dim)
+
+        let host = NSHostingController(rootView: WelcomeView { [weak self] in
+            guard let self = self else { return }
+
+            // Close the welcome panel immediately so the Finder picker isn’t hidden
+            self.welcomePanel?.close()
+            self.welcomePanel = nil
+
+            // Show folder chooser
+            self.model.chooseSaveFolder { folder in
+                if folder != nil {
+                    UserDefaults.standard.set(true, forKey: self.hasSeenWelcomeKey)
+                }
+            }
+        })
+        blur.addSubview(host.view)
+        host.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            host.view.topAnchor.constraint(equalTo: blur.topAnchor),
+            host.view.bottomAnchor.constraint(equalTo: blur.bottomAnchor),
+            host.view.leadingAnchor.constraint(equalTo: blur.leadingAnchor),
+            host.view.trailingAnchor.constraint(equalTo: blur.trailingAnchor)
+        ])
+
+        panel.contentView = wrapper
+
+        if let screen = NSScreen.main {
+            panel.center()
+        }
+
+        welcomePanel = NSWindowController(window: panel)
+        panel.alphaValue = 0
+        panel.makeKeyAndOrderFront(nil)
+
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.15
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            panel.animator().alphaValue = 1
+        }
+    }
+}
+
+// MARK: - Raycast‑style welcome view
+struct WelcomeView: View {
+    var pickAction: () -> Void
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "folder.badge.plus")
+                .font(.system(size: 40, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+
+            Text("Choose a Folder")
+                .font(.title2).bold()
+
+            Text("bttrfly needs a location to save your Markdown notes. You can change this later in Settings.")
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 24)
+
+            Button("Select Folder…", action: pickAction)
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
+                .frame(maxWidth: .infinity)
+        }
+        .padding(32)
+        .frame(width: 360, height: 200)
     }
 }

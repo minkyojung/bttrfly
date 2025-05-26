@@ -32,8 +32,8 @@ struct NoteView: View {
                 .ignoresSafeArea()           // 블러도 타이틀바까지
                 .overlay(                       // dark overlay *above* the blur
                     (cs == .dark
-                        ? Color.black.opacity(0.15)      // 다크: 15 % 암막
-                        : Color.white.opacity(0.15))     // 라이트: 8 % 화이트 글레이즈로 더 하얗게
+                        ? Color.black.opacity(0.3)      // 다크: 15 % 암막
+                        : Color.white.opacity(0.1))     // 라이트: 8 % 화이트 글레이즈로 더 하얗게
                         .ignoresSafeArea()
                 )
             

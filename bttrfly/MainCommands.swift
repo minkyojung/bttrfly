@@ -14,16 +14,21 @@ struct MainCommands: Commands {
         
         CommandGroup(after: .newItem) {   // inject into the existing "File" menu
             Divider()
-            Button("Show Storage Folder") {
-                // Path: ~/Library/Containers/<bundle-id>/Data/Documents/Btt
-                
-                let baseDir = FileManager.default
-                    .homeDirectoryForCurrentUser
-                    .appendingPathComponent("Library/Containers")
-                    .appendingPathComponent(Bundle.main.bundleIdentifier ?? "")
-                    .appendingPathComponent("Data/Documents/Bttrfly", isDirectory: true)
-                try? FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
-                NSWorkspace.shared.open(baseDir)  // open directly in Finder
+            Button("Show Notes Folder") {
+                // If the user has selected a custom save folder, open that.
+                if let folder = delegate.panel?.model?.saveFolder {
+                    NSWorkspace.shared.open(folder)
+                } else {
+                    // Fallback to legacy sandbox‑container path
+                    let baseDir = FileManager.default
+                        .homeDirectoryForCurrentUser
+                        .appendingPathComponent("Library/Containers")
+                        .appendingPathComponent(Bundle.main.bundleIdentifier ?? "")
+                        .appendingPathComponent("Data/Documents/Bttrfly", isDirectory: true)
+                    try? FileManager.default.createDirectory(at: baseDir,
+                                                             withIntermediateDirectories: true)
+                    NSWorkspace.shared.open(baseDir)
+                }
             }
             .keyboardShortcut("o", modifiers: [.command, .shift])
             

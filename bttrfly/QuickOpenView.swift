@@ -29,14 +29,20 @@ struct QuickOpenView: View {
     @State private var hoverAdd = false
     @State private var dragging: URL? = nil      // current item being dragged
     @State private var keyMonitor: Any? = nil    // local NSEvent monitor for ⏎ key
+    @State private var scrollProxy: ScrollViewProxy? = nil   // NEW
+    // Track which row the mouse is currently over
+    @State private var hovered: URL? = nil
+
+    /// User‑specified default save folder (nil until the user picks one)
+    private var coreFolder: URL? { model.loadSavedFolderURL() }
 
     var body: some View {
         VStack(spacing: 12) {
 
             // ── Search bar with vault dropdown ────────────────
             HStack(spacing: 6) {
-                Button(action: pickVault) {
-                    Image(systemName: "folder")
+                Button(action: pickFile) {
+                    Image(systemName: "book.pages")
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(.secondary)
                         .font(.system(size: 14, weight: .semibold))
@@ -46,7 +52,7 @@ struct QuickOpenView: View {
                                 .fill(Color.secondary.opacity(hoverDropdown ? 0.18 : 0))
                         )
                         .frame(width: 24, height: 24)
-                        .help(vaultURL == nil ? "Choose Folder" : "Change Folder")
+                        .help("Open Markdown File…")
                 }
                 .buttonStyle(.plain)
                 .onHover { hoverDropdown = $0 }
@@ -66,6 +72,7 @@ struct QuickOpenView: View {
                                 url: url,
                                 isSelected: vaultURL == url,
                                 dragging: $dragging,
+                                coreFolder: coreFolder,
                                 select: { selected in
                                     // Keep security scope open (idempotent if already active)
                                     _ = selected.startAccessingSecurityScopedResource()
@@ -114,69 +121,82 @@ struct QuickOpenView: View {
             }
 
             // ── Notes list ──────────────────────────────────
-            List(selection: $selection) {
-                ForEach(displayed, id: \.self) { url in
-                    NoteRow(url: url,
-                            isCurrent: false,
-                            isSelected: selection == url)
-                        .contentShape(Rectangle())          // 전체 행 클릭 가능
-                        .tag(url)
-                        .listRowInsets(EdgeInsets())
+            ScrollViewReader { proxy in
+                List(selection: $selection) {
+                    ForEach(displayed, id: \.self) { url in
+                        NoteRow(url: url,
+                                isCurrent: false,
+                                isSelected: selection == url,
+                                isHovered: hovered == url)          // NEW
+                            .onHover { inside in                   // update global hover
+                                hovered = inside ? url : nil
+                            }
+                            .contentShape(Rectangle())
+                            .tag(url)
+                            .id(url)                      // enable scrollTo
+                            .listRowInsets(EdgeInsets())
+                    }
                 }
-            }
-            .listStyle(.plain)
-            .listRowSeparator(.hidden)   // hide default separator (macOS 14+)
-            .accentColor(.clear)         // suppress system green selection tint
-            .scrollContentBackground(.hidden)
-            .background(
-                ListGridStyler().allowsHitTesting(false) // remove NSTableView grid + spacing
-            )
-            .focused($listFocused)
-            .background(DoubleClickHandler(current: $selection, open: model.open))
-            // 🔹 첫 표시 때만: 첫 행 하이라이트 + 리스트 포커스
-                        .onAppear {
-                            if selection == nil { selection = displayed.first }
-                            DispatchQueue.main.async { listFocused = true }
-                        }
-                        
-            .onDisappear {
-                pinned.forEach { $0.stopAccessingSecurityScopedResource() }
+                .listStyle(.plain)
+                .listRowSeparator(.hidden)
+                .accentColor(.clear)
+                .scrollContentBackground(.hidden)
+                .background(
+                    ListGridStyler().allowsHitTesting(false)
+                )
+                .focused($listFocused)
+                .background(DoubleClickHandler(current: $selection, open: model.open))
+                .onAppear {
+                    // save proxy and focus list on initial show
+                    scrollProxy = proxy
+                    if selection == nil { selection = displayed.first }
+                    DispatchQueue.main.async { listFocused = true }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSScrollView.didLiveScrollNotification)) { _ in
+                    hovered = nil
+                }
+                .onDisappear {
+                    pinned.forEach { $0.stopAccessingSecurityScopedResource() }
+                }
             }
         }
         .onAppear {
             // Sync pinned array with preference
-            let core = defaultBttrflyFolder()
-            if !showDefaultFolder {
-                pinned.removeAll { $0 == core }
-            } else if !pinned.contains(core) {
-                pinned.insert(core, at: 0)
+            if let core = coreFolder {
+                if !showDefaultFolder {
+                    pinned.removeAll { $0 == core }
+                } else if !pinned.contains(core) {
+                    pinned.insert(core, at: 0)
+                }
             }
             print("🪵 QuickOpenView sees →", model.debugID)
 
-            // ⏎ / Enter opens the currently‑selected note, but only if focus is in the Quick‑Open list
+            // ⏎ / Enter opens the currently‑selected note, all other keys go through
             keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { ev in
-                // 36 = Return, 76 = Enter (numeric keypad)
-                guard ev.keyCode == 36 || ev.keyCode == 76 else { return ev }
-
-                // Only handle if firstResponder is an NSTableView (our list)
-                if let responder = NSApp.keyWindow?.firstResponder,
-                   responder.isKind(of: NSTableView.self),
-                   let url = selection {
-                    model.open(url: url)
-                    return nil   // prevent default to avoid beep
+                switch ev.keyCode {
+                case 36, 76:            // ⏎ / Enter
+                    if let responder = NSApp.keyWindow?.firstResponder,
+                       responder.isKind(of: NSTableView.self),
+                       let url = selection {
+                        model.open(url: url)
+                        return nil       // consume Enter
+                    }
+                default:
+                    break               // let all other keys (↑/↓ 포함) reach NSTableView
                 }
-                return ev   // otherwise, let the editor or other views handle it
+                return ev
             }
         }
         .onChange(of: showDefaultFolder) { on in
-            let core = defaultBttrflyFolder()
-            if on {
-                if !pinned.contains(core) {
-                    pinned.insert(core, at: 0)
-                    savePinnedFolders(pinned)
+            if let core = coreFolder {
+                if on {
+                    if !pinned.contains(core) {
+                        pinned.insert(core, at: 0)
+                        savePinnedFolders(pinned)
+                    }
+                } else {
+                    removePinned(core)
                 }
-            } else {
-                removePinned(core)
             }
         }
         .onDisappear {
@@ -185,6 +205,10 @@ struct QuickOpenView: View {
                 NSEvent.removeMonitor(m)
                 keyMonitor = nil
             }
+        }
+        // Clear hover highlight whenever keyboard changes selection
+        .onChange(of: selection) { _ in
+            hovered = nil
         }
         .frame(height: 320)                         // allow width to flex with parent
         .padding(.horizontal, 12)
@@ -220,20 +244,21 @@ struct QuickOpenView: View {
         }
     }
 
-    private func pickVault() {
+// MARK: - Helpers
+    /// Pick a single Markdown file and open it in the editor
+    private func pickFile() {
         let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedFileTypes = ["md", "markdown"]
         panel.allowsMultipleSelection = false
-        panel.prompt = "Choose"
+        panel.prompt = "Open"
 
         if panel.runModal() == .OK, let url = panel.url {
             guard url.startAccessingSecurityScopedResource() else { return }
             defer { url.stopAccessingSecurityScopedResource() }
 
-            vaultURL = url
-            files = scanMarkdown(in: url)
-            saveRecentVault(url)
+            model.open(url: url)                 // open in main editor
         }
     }
 
@@ -274,6 +299,29 @@ struct QuickOpenView: View {
             .filter { $0.pathExtension.lowercased() == "md" }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
     }
+
+    // Keyboard navigation
+    private func moveSelection(_ delta: Int) {
+        guard !displayed.isEmpty else { return }
+
+        // 1. Calculate the next index within bounds
+        let currentIdx = selection.flatMap { displayed.firstIndex(of: $0) } ?? 0
+        let newIdx = min(max(currentIdx + delta, 0), displayed.count - 1)
+        let target = displayed[newIdx]
+
+        // 2. Apply new selection
+        selection = target
+        hovered = nil     // reset hover; will update on next real mouse move
+
+        // 3. Ensure the row is visible – scroll *slightly* past edge so it never hides
+        DispatchQueue.main.async {
+            withAnimation(.easeInOut(duration: 0.12)) {
+                // If moving down, pin near bottom; if up, near top.
+                let anchor: UnitPoint = delta > 0 ? .bottom : .top
+                scrollProxy?.scrollTo(target, anchor: anchor)
+            }
+        }
+    }
 }
 
 // MARK: - Drag‑&‑drop re‑order support
@@ -307,6 +355,7 @@ private struct PinnedFolderChip: View {
     let url: URL
     let isSelected: Bool
     @Binding var dragging: URL?
+    let coreFolder: URL?
     let select: (URL) -> Void
     let remove: (URL) -> Void
     @Environment(\.colorScheme) private var scheme
@@ -336,7 +385,7 @@ private struct PinnedFolderChip: View {
                 .onTapGesture { select(url) }
 
             // ── Hover delete ("x") button ──
-            if hover && !(url == defaultBttrflyFolder() && showDefaultFolder) {
+            if hover && !(url == coreFolder && showDefaultFolder) {
                 Button(action: { remove(url) }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 6, weight: .bold))
@@ -361,7 +410,7 @@ struct NoteRow: View {
     var url: URL
     var isCurrent: Bool
     var isSelected: Bool
-    @State private var hover = false
+    var isHovered: Bool         // NEW
 
     var body: some View {
         HStack(spacing: 0) {
@@ -381,12 +430,11 @@ struct NoteRow: View {
         }
         .padding(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 6))   // reduce left gap
         .listRowBackground(
-            (isSelected || hover)
+            (isSelected || isHovered)
             ? Color(nsColor: NSColor.controlAccentColor)
                 .opacity(isSelected ? 0.18 : 0.08)
-            : Color.clear
+            : Color.black.opacity(0.01)
         )
-        .onHover { hover = $0 }
     }
 
     private func characterCount(_ url: URL) -> Int {
@@ -419,21 +467,6 @@ private func saveRecentVault(_ url: URL) {
 }
 
 // Favourites (persistent, security‑scoped bookmarks)
-/// Returns the sandbox‑local “Bttrfly” folder inside Documents, creating it if missing.
-private func defaultBttrflyFolder() -> URL {
-    // Sandbox‑container path:  ~/Library/Containers/<bundle-id>/Data/Documents/Bttrfly
-    let bundleID = Bundle.main.bundleIdentifier ?? ""
-    let base = FileManager.default
-        .homeDirectoryForCurrentUser
-        .appendingPathComponent("Library/Containers")
-        .appendingPathComponent(bundleID)
-        .appendingPathComponent("Data/Documents/Bttrfly", isDirectory: true)
-
-    // Ensure the directory exists
-    try? FileManager.default.createDirectory(at: base,
-                                             withIntermediateDirectories: true)
-    return base
-}
 
 /// Load favourites from stored security‑scoped bookmarks, then deduplicate while preserving order.
 private func loadPinnedFolders() -> [URL] {
@@ -462,12 +495,6 @@ private func loadPinnedFolders() -> [URL] {
             seen.insert(key)
         }
     }
-    // 3) Ensure the default Bttrfly folder is always present as a favourite
-    let core = defaultBttrflyFolder()
-    if !unique.contains(core) {
-        unique.insert(core, at: 0)      // put it first
-        savePinnedFolders(unique)       // persist bookmark list
-    }
     return unique
 }
 
@@ -490,6 +517,8 @@ private struct ListGridStyler: NSViewRepresentable {
         guard let table = locateTable(in: nsView) else { return }
         table.gridStyleMask = []                 // no grid lines
         table.gridColor = .clear
+        table.usesAlternatingRowBackgroundColors = false
+        table.style = .fullWidth
         table.intercellSpacing = NSSize(width: 0, height: 0)  // no thin gaps
     }
 

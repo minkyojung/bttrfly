@@ -1,0 +1,4 @@
+import CoreText
+
+let names = CTFontManagerCopyAvailablePostScriptNames() as! [String]
+print(names.filter { $0.contains("Pretendard") })
