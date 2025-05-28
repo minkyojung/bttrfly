@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		D80635152DE4403E00CF10A3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = D80635142DE4403E00CF10A3 /* Sparkle */; };
 		D8659AB32DCCD55A00BABDE6 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = D8659AB22DCCD55A00BABDE6 /* KeyboardShortcuts */; };
-		D8C5956B2DE700F3001870F4 /* EditorResources in Resources */ = {isa = PBXBuildFile; fileRef = D8C5956A2DE700F3001870F4 /* EditorResources */; };
+		D8C595712DE7121A001870F4 /* dist in Resources */ = {isa = PBXBuildFile; fileRef = D8C595702DE7121A001870F4 /* dist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,7 +33,7 @@
 		D8748B622DBDF0D8008CD6BE /* bttrfly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bttrfly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8748B732DBDF0D9008CD6BE /* bttrflyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = bttrflyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8748B7D2DBDF0D9008CD6BE /* bttrflyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = bttrflyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		D8C5956A2DE700F3001870F4 /* EditorResources */ = {isa = PBXFileReference; lastKnownFileType = folder; name = EditorResources; path = ../EditorResources; sourceTree = "<group>"; };
+		D8C595702DE7121A001870F4 /* dist */ = {isa = PBXFileReference; lastKnownFileType = folder; name = dist; path = ../EditorResources/dist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -96,7 +96,7 @@
 		D8748B592DBDF0D8008CD6BE = {
 			isa = PBXGroup;
 			children = (
-				D8C5956A2DE700F3001870F4 /* EditorResources */,
+				D8C595702DE7121A001870F4 /* dist */,
 				D8C595612DE6E8A2001870F4 /* public */,
 				D8748B642DBDF0D8008CD6BE /* bttrfly */,
 				D8748B762DBDF0D9008CD6BE /* bttrflyTests */,
@@ -243,7 +243,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D8C5956B2DE700F3001870F4 /* EditorResources in Resources */,
+				D8C595712DE7121A001870F4 /* dist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

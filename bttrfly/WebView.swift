@@ -34,15 +34,12 @@ struct WebView: NSViewRepresentable {
         // Load the editor's index.html (prefer the dist build, fall back to root)
         if let htmlURL = Bundle.main.url(forResource: "index",
                                          withExtension: "html",
-                                         subdirectory: "EditorResources/dist") ??
-                         Bundle.main.url(forResource: "index",
-                                         withExtension: "html",
-                                         subdirectory: "EditorResources") {
+                                         subdirectory: "dist") {
 
             web.loadFileURL(htmlURL,
                             allowingReadAccessTo: htmlURL.deletingLastPathComponent())
         } else {
-            print("❌ index.html not found in bundle – check your Copy Bundle Resources phase")
+            print("❌ index.html not found – check Copy Bundle Resources.")
         }
         context.coordinator.web = web   // keep reference for Swift → JS updates
         return web
