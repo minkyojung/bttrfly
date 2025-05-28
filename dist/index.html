@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Inter – Sans‑serif font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      /* ❶ 전역 기본 서체 – 굵기 300~700 모두 SF Pro Text */
+      :root {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 1.6;
+        letter-spacing: -0.015em;
+        --bg-window:   #0E0E11;   /* darker neutral for dark‑mode */
+        --bg-bar:      #0E0E11;
+        --fg-primary:  #FFFFFF;           /* main text & icons */
+        --fg-secondary: rgba(255,255,255,0.60); /* secondary text */
+        --accent:      #CBCBCC;           /* outlines (checkbox etc.) */
+        --caret:       #FFFFFF;           /* caret colour (dark‑mode default) */
+        --dot-glow-blur:   3px;   /* 네온 블러 정도 (값만 바꾸면 즉시 반영) */
+        --dot-glow-spread: 1px;   /* 글로우가 퍼지는 거리 */
+      }
+      /* ── Light‑mode overrides ─────────────────────────────── */
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg-window:   #FFFFFF;
+          --bg-bar:      #F1F1F3;
+          --fg-primary:  #333333;
+          --fg-secondary: rgba(0,0,0,0.55);
+          --accent:      #454547;
+          --caret:       #333333;           /* caret colour for light mode */
+        }
+      }
+
+      /* === SF‑Symbol masks for custom checkbox ========================= */
+      :root {
+        /* Unchecked:   SF Symbol “circle” (thin 1.5 px ring) */
+        --sf-circle: url('data:image/svg+xml;utf8,\
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" \
+stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">\
+<circle cx="7" cy="7" r="6.25"/></svg>');
+
+        /* Checked:   SF Symbol “checkmark.circle.fill” */
+        --sf-checkmark-circle-fill: url('data:image/svg+xml;utf8,\
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" fill="currentColor" stroke="none">\
+<circle cx="7" cy="7" r="7"/><path d="M4.3 7.3l1.9 1.9 3.5-3.5" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>\
+</svg>');
+      }
+      /* ================================================================ */
+
+
+      /* ❷ 코드 블록·인라인도 SF Pro로 통일하려면 ↓ 추가 */
+      pre, code {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: -0.015em;
+      }
+        
+        html, body {
+          background: transparent;
+          height: 100%;      /* fill the WKWebView frame */
+          width: 100%;       /* allow absolute elements to span full width */
+          margin: 0;         /* remove default 8‑px browser margin */
+          overflow: hidden;  /* suppress the root scrollbar */
+        }
+
+        #editorRoot {
+          height: calc(100% - 42px);   /* leave a larger blank area below */
+          overflow-x: hidden;        /* stop horizontal scroll that nudged the view */
+          margin-bottom: 42px;         /* extra gap between editor and bottom bar */
+        }
+
+        .ProseMirror {
+          height: 100%;
+        }
+        
+        
+        /* ❸ List indentation & spacing tweaks */
+        .ProseMirror ul,
+        .ProseMirror ol {
+          padding-left: 1.5em;
+          margin-top: 0.5em;       /* 목록 위 여백 더 넓게 */
+          margin-bottom: 0.5em;    /* 목록 아래 여백 더 넓게 */
+        }
+
+        /* --- Bullet list vs task list separation -------------------------------- */
+        /* Remove bullets for the task‑list container itself */
+        .ProseMirror ul[data-type="taskList"] {
+          list-style: none;      /* hide disk bullet on the outer <ul> */
+          margin: 0.5em 0;
+          padding-left: 0;       /* align checkbox flush with body text */
+        }
+        /* Default bullet / ordered lists */
+        .ProseMirror ul:not([data-type="taskList"]) {
+          list-style-position: outside;
+          list-style-type: disc;     /* white circle bullet */
+          padding-left: 1.5em;       /* keep indent */
+        }
+
+        /* Remove bullet for task list items completely (use grid for selection highlight fix) */
+        .ProseMirror ul[data-type="taskList"] > li,
+        .ProseMirror li[data-checked] {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          display: grid;                 /* grid solves WebKit selection bug */
+          grid-template-columns: auto 1fr; /* col‑1 checkbox, col‑2 text */
+          column-gap: 0.45em;
+          align-items: flex-start;           /* top‑align to avoid vertical shift */
+        }
+
+        .ProseMirror li[data-checked] > label {
+          flex: 0 0 auto;          /* keep fixed checkbox width */
+          display: inline-flex;
+          align-items: center;
+        }
+
+        .ProseMirror li[data-checked] input[type="checkbox"]{
+          /* Visually hidden but accessible */
+          position: absolute;
+          opacity: 0;
+          width: 0;
+          height: 0;
+          margin: 0;
+          pointer-events: none;
+        }
+
+        /* ── Custom square checkbox (border only) ─────────────────── */
+        .ProseMirror li[data-checked] label > span {
+          width: 0.9em;
+          height: 0.9em;
+          border: 2px solid var(--accent); /* outer square */
+          border-radius: 6px;              /* subtle rounding */
+          display: inline-block;
+          position: relative;
+          background: transparent;
+          /* nudge down so checkbox aligns visually with text baseline */
+          margin-top: 2px;
+        }
+        /* inner filled square, revealed when checked */
+        .ProseMirror li[data-checked] label > span::after {
+          content: '';
+          position: absolute;
+          inset: 1.5px;              /* gap between outer and inner */
+          border: 2px solid var(--accent);
+          border-radius: 3px;
+          background: var(--accent);
+          opacity: 0;              /* hidden by default */
+          transition: opacity .15s ease;
+        }
+        /* make the entire checkbox area show a hand cursor */
+        .ProseMirror li[data-checked] label,
+        .ProseMirror ul[data-type="taskList"] > li label {
+          cursor: pointer !important;
+        }
+        /* show inner square when checkbox is checked */
+        .ProseMirror li[data-checked] input[type="checkbox"]:checked + span::after {
+          opacity: 1;
+        }
+
+        /* --- Completed task: strikethrough & dim --- */
+        .ProseMirror li[data-checked="true"] > div {
+          text-decoration: line-through;
+          color: var(--fg-secondary);
+          opacity: 1;
+        }
+
+        /* Tighten spacing inside task‑items */
+        .ProseMirror li[data-checked] > div {
+          flex: 1 1 auto;          /* let text grow & wrap naturally */
+          min-width: 0;            /* allow wrapping inside flex */
+          line-height: inherit;
+          user-select: text;           /* ensure task text is selectable ✅ */
+        }
+
+        /* Remove paragraph margins inside task items (p lives one level deeper) */
+        .ProseMirror li[data-checked] p {
+          margin: 0;
+        }
+
+        .ProseMirror li {
+          line-height: 1.4;
+          margin: 0.1em 0;      /* 항목 간 상하 간격 감소 */
+        }
+
+        /* more breathing room between task‑list items without touching bullets */
+        .ProseMirror ul[data-type="taskList"] > li + li {
+          margin-top: 0.35em;   /* adjust value to taste */
+        }
+
+        /* ❸‑b  Tighten paragraphs *inside* list items */
+        .ProseMirror li > p {
+          margin: 0;            /* remove default <p> 1 em margins */
+          line-height: 1.4;     /* keep same rhythm as list item */
+        }
+
+        /* ❹ Plain paragraph spacing */
+        .ProseMirror p {
+          margin: 0 0 0.6em;     /* kill default top margin, keep bottom rhythm */
+          line-height: 1.6;
+        }
+
+        /* ❹‑b Ensure first list sits on the same baseline as first paragraph */
+        .ProseMirror > ul:first-child,
+        .ProseMirror > ol:first-child {
+          margin-top: 0;         /* remove residual top margin */
+        }
+        
+        
+        .ProseMirror {
+          height: 100%;
+          box-sizing: border-box;      /* include padding inside the 100% height */
+          overflow-y: auto;       /* vertical scroll */
+          overflow-x: hidden;     /* lock horizontal position – stop sideways jitter */
+          outline: none;      /* 초록색 포커스 제거 */
+          background: transparent;
+          padding: 16px 0 72px;      /* top 16, no side gutter, bottom 72 */
+          scroll-padding-top: 16px;
+          font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 14px;
+          color: var(--fg-primary);        /* 어두운 블러 위에서 잘 보이는 흰색 */
+          /* Scrollbar colour for Firefox */
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255,255,255,0.30) transparent;
+          width: 100%;          /* lock width so the editor doesn't re-flow on input */
+        }
+
+        /* ❻ Link appearance – color, underline, hand cursor */
+        .ProseMirror a {
+          color: #4DA8FF;           /* link colour – tweak to taste */
+          text-decoration: underline;
+          text-underline-offset: 2px; /* cleaner gap under text */
+          cursor: pointer;          /* hand cursor when hovering */
+        }
+
+        .ProseMirror a:hover {
+          filter: brightness(1.15); /* subtle highlight on hover */
+        }
+
+        /* Keep scrollbar track invisible, let system draw the thumb */
+        .ProseMirror::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        /* --- Global override so *any* scroll area stays transparent --- */
+        ::-webkit-scrollbar-track,
+        ::-webkit-scrollbar-track-piece,
+        ::-webkit-scrollbar-corner     { background: transparent !important; }
+
+        /* fallback for Firefox/Gecko everywhere */
+        html, body, .ProseMirror {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255,255,255,0.30) transparent;
+        }
+
+        /* ❺ Heading spacing override */
+        .ProseMirror h1,
+        .ProseMirror h2,
+        .ProseMirror h3,
+        .ProseMirror h4,
+        .ProseMirror h5,
+        .ProseMirror h6 {
+          margin-top: 0.4em;        /* remove default top space */
+          margin-bottom: 0.1em; /* tighter bottom rhythm */
+        }
+
+        /* === Completely hide scrollbars inside the editor === */
+        .ProseMirror {
+          scrollbar-width: none;          /* Firefox */
+        }
+        .ProseMirror::-webkit-scrollbar {
+          width: 0 !important;            /* Safari/Chrome */
+          height: 0 !important;
+          display: none;                  /* WebKit (additional safeguard) */
+        }
+        
+        /* ── Bottom bar ───────────────────────────── */
+        body { position: relative; }   /* anchor for absolute bar */
+        #bottomBar {
+          position: fixed;
+          bottom: 6px;
+          left: 0;
+          right: 0;
+          height: 24px;             /* taller bar like titlebar */
+          line-height: 24px;
+          min-height: 24px;
+          display: flex;
+          align-items: center;
+          padding: 0 2px 0 2px;   /* back to edge‑flush */
+          backdrop-filter: none;  /* same translucent feel */
+          border-radius: 0px;       /* match window inner radius */
+          font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 12px;
+          color: var(--fg-secondary);
+        }
+
+
+        #charCount {
+           margin-left: auto;
+           color: var(--fg-secondary);
+           font-size: 11px;      /* ← 12 px ➜ 10 px로 축소 */
+           line-height: 1;       /* 숫자가 세로로도 딱 맞게 */
+         }
+        
+        /* ── Bottom-bar logo ───────────────────────── */
+        #noteLogo{
+          display:inline-flex;
+          align-items:center;
+          height:12px;
+          margin-right:6px;
+        }
+        #noteLogo img{
+          height:100%;
+          width:auto;
+        }
+
+        /* Caret thickness & color */
+        
+        .ProseMirror {
+          caret-color: var(--caret);
+        }
+
+/* === 상태 Pill ===================================== */
+#statusPill{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;padding:2px 6px 2px 0;border-radius:4px; /* 왼쪽 패딩 0 */
+  transition:opacity .2s;
+}
+ #statusPill .dot{
+   position:relative;
+   display:inline-block;
+   width:4px;height:4px;
+   border-radius:50%;
+ }
+
+/* 상태별 색상 */
+.state--saving .dot{
+  background:#FFD700;            /* 본체 색 */
+  --dotColor:#FFD700;
+  animation:pulse 1s infinite;
+  box-shadow:0 0 var(--dot-glow-blur) var(--dotColor);
+}
+.state--ok .dot{
+  background:#3CC57D;
+  --dotColor:#3CC57D;
+  box-shadow:0 0 var(--dot-glow-blur) var(--dotColor);
+}
+.state--error .dot{
+  background:#FF5B5B;
+  --dotColor:#FF5B5B;
+  box-shadow:0 0 var(--dot-glow-blur) var(--dotColor);
+}
+
+@keyframes pulse{0%,100%{opacity:.3;}50%{opacity:1;}}
+    </style>
+  <meta charset="utf-8" />
+  <title>MVP</title>
+  <script type="module" crossorigin src="./bundle.js"></script>
+</head>
+<body>
+  <div id="editorRoot"></div>
+
+  <div id="bottomBar">
+      <picture id="noteLogo">
+          <source srcset="data:image/svg+xml,%3csvg%20width='300'%20height='300'%20viewBox='0%200%20300%20300'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20clip-path='url(%23clip0_189_41)'%3e%3cpath%20d='M18.0641%2039.373C66.8312%20-11.2444%20119.861%2059.8016%20146.149%20117.6L116.302%20228.992C84.1565%20208.604%2031.6211%20169.742%2035.7601%20166.736C39.899%20163.73%2027.338%20157.486%2025.9006%20156.072C7.7262%20141.6%2011.8652%20121.065%2012.8339%20113.522C14.0966%20106.199%2017.4424%2096.3807%2011.0338%2077.44C3.96914%2056.5604%2015.5533%2043.9585%2018.0641%2039.373Z'%20fill='%239C9C9D'/%3e%3cpath%20d='M296.206%20113.827C279.281%2045.607%20197.814%2080.6887%20146.149%20117.599L116.32%20228.922C154.353%20227.339%20219.037%20217.941%20217.407%20214.221C217.018%20209.766%20228.855%20211.355%20231.07%20210.973C254.045%20207.527%20260.728%20187.673%20263.661%20180.656C266.229%20173.684%20268.24%20163.507%20283.261%20150.309C299.819%20135.759%20296.088%20119.053%20296.206%20113.827Z'%20fill='%239C9C9D'/%3e%3cellipse%20cx='166.468'%20cy='228.656'%20rx='52.3444'%20ry='54.6369'%20transform='rotate(15%20166.468%20228.656)'%20fill='%239C9C9D'/%3e%3cellipse%20cx='73.4657'%20cy='203.737'%20rx='52.3444'%20ry='54.6369'%20transform='rotate(15%2073.4657%20203.737)'%20fill='%239C9C9D'/%3e%3cpath%20d='M288.393%20123.742C283.307%2050.2455%20189.826%2094.3846%20143.721%20125.641L118.307%20220.491C152.527%20219.543%20212.673%20214.46%20210.748%20210.408C208.823%20206.356%20219.657%20206.689%20221.409%20206.274C242.054%20203.556%20250.8%20191.657%20252.593%20186.048C255.009%20180.113%20259.694%20164.083%20272.384%20152.16C285.073%20140.238%20288.344%20128.247%20288.393%20123.742Z'%20fill='%239C9C9D'/%3e%3cpath%20d='M19.3809%2051.6608C60.5342%20-9.44611%20119.421%2075.5199%20143.721%20125.641L118.306%20220.491C89.1444%20202.56%2039.5975%20168.084%2043.2904%20165.538C46.9834%20162.992%2037.4345%20157.863%2036.1249%20156.628C19.6053%20143.951%2018.4432%20130.012%2019.2324%20123.519C20.2887%20117.22%2024.065%20100.946%2019.0366%2084.2762C14.0082%2067.6063%2017.171%2055.5868%2019.3809%2051.6608Z'%20fill='%239C9C9D'/%3e%3cellipse%20cx='166.865'%20cy='226.132'%20rx='47.5354'%20ry='50.6631'%20transform='rotate(15%20166.865%20226.132)'%20fill='%239C9C9D'/%3e%3cellipse%20cx='75.0326'%20cy='201.525'%20rx='47.5354'%20ry='50.6631'%20transform='rotate(15%2075.0326%20201.525)'%20fill='%239C9C9D'/%3e%3cpath%20d='M144.879%20122.529C147.546%20145.276%20148.562%20188.88%20118.443%20222.807C112.876%20200.738%20115.159%20158.769%20144.879%20122.529Z'%20fill='%239C9C9D'/%3e%3c/g%3e%3cdefs%3e%3cclipPath%20id='clip0_189_41'%3e%3crect%20width='300'%20height='300'%20fill='white'/%3e%3c/clipPath%3e%3c/defs%3e%3c/svg%3e" media="(prefers-color-scheme: dark)">
+          <img src="data:image/svg+xml,%3csvg%20width='300'%20height='300'%20viewBox='0%200%20300%20300'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20clip-path='url(%23clip0_189_42)'%3e%3cpath%20d='M18.0641%2039.373C66.8312%20-11.2444%20119.861%2059.8016%20146.149%20117.6L116.302%20228.992C84.1565%20208.604%2031.6211%20169.742%2035.7601%20166.736C39.899%20163.73%2027.338%20157.486%2025.9006%20156.072C7.7262%20141.6%2011.8652%20121.065%2012.8339%20113.522C14.0966%20106.199%2017.4424%2096.3807%2011.0338%2077.44C3.96914%2056.5604%2015.5533%2043.9585%2018.0641%2039.373Z'%20fill='%23737374'/%3e%3cpath%20d='M296.206%20113.827C279.281%2045.607%20197.814%2080.6887%20146.149%20117.599L116.32%20228.922C154.353%20227.339%20219.037%20217.941%20217.407%20214.221C217.018%20209.766%20228.855%20211.355%20231.07%20210.973C254.045%20207.527%20260.728%20187.673%20263.661%20180.656C266.229%20173.684%20268.24%20163.507%20283.261%20150.309C299.819%20135.759%20296.088%20119.053%20296.206%20113.827Z'%20fill='%23737374'/%3e%3cellipse%20cx='166.468'%20cy='228.656'%20rx='52.3444'%20ry='54.6369'%20transform='rotate(15%20166.468%20228.656)'%20fill='%23737374'/%3e%3cellipse%20cx='73.4657'%20cy='203.737'%20rx='52.3444'%20ry='54.6369'%20transform='rotate(15%2073.4657%20203.737)'%20fill='%23737374'/%3e%3cpath%20d='M288.393%20123.742C283.307%2050.2455%20189.826%2094.3846%20143.721%20125.641L118.307%20220.491C152.527%20219.543%20212.673%20214.46%20210.748%20210.408C208.823%20206.356%20219.657%20206.689%20221.409%20206.274C242.054%20203.556%20250.8%20191.657%20252.593%20186.048C255.009%20180.113%20259.694%20164.083%20272.384%20152.16C285.073%20140.238%20288.344%20128.247%20288.393%20123.742Z'%20fill='%23737374'/%3e%3cpath%20d='M19.3809%2051.6608C60.5342%20-9.44611%20119.421%2075.5199%20143.721%20125.641L118.306%20220.491C89.1444%20202.56%2039.5975%20168.084%2043.2904%20165.538C46.9834%20162.992%2037.4345%20157.863%2036.1249%20156.628C19.6053%20143.951%2018.4432%20130.012%2019.2324%20123.519C20.2887%20117.22%2024.065%20100.946%2019.0366%2084.2762C14.0082%2067.6063%2017.171%2055.5868%2019.3809%2051.6608Z'%20fill='%23737374'/%3e%3cellipse%20cx='166.865'%20cy='226.132'%20rx='47.5354'%20ry='50.6631'%20transform='rotate(15%20166.865%20226.132)'%20fill='%23737374'/%3e%3cellipse%20cx='75.0326'%20cy='201.525'%20rx='47.5354'%20ry='50.6631'%20transform='rotate(15%2075.0326%20201.525)'%20fill='%23737374'/%3e%3cpath%20d='M144.879%20122.529C147.546%20145.276%20148.562%20188.88%20118.443%20222.807C112.876%20200.738%20115.159%20158.769%20144.879%20122.529Z'%20fill='%23737374'/%3e%3c/g%3e%3cdefs%3e%3cclipPath%20id='clip0_189_42'%3e%3crect%20width='300'%20height='300'%20fill='white'/%3e%3c/clipPath%3e%3c/defs%3e%3c/svg%3e" alt="Bttrfly logo">
+        </picture>
+
+        <span id="statusPill" class="state--idle">
+            <span class="dot"></span>
+            <span class="text"></span>
+        </span>
+        <span id="charCount">0</span>   <!-- 글자 수만 남김 -->
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const editorEl = document.querySelector('.ProseMirror');
+        const counterEl = document.getElementById('charCount');
+        function updateCount() {
+          counterEl.textContent = editorEl?.textContent.length ?? 0;
+        }
+        updateCount();
+        editorEl?.addEventListener('input', updateCount);
+      });
+    </script>
+    <script>
+    /* === Status Pill helper === */
+    (function () {
+      const pill = document.getElementById('statusPill');
+      const text = pill.querySelector('.text');
+      let hideTimer = null;
+
+      window.updateStatus = function (type = 'idle', msg = '') {
+        pill.className = 'state--' + type;   // 상태 클래스 갱신
+        text.textContent = msg;              // 메시지 변경
+
+        clearTimeout(hideTimer);
+        if (['ok', 'error'].includes(type)) { // 성공·실패는 3초 뒤 자동 숨김
+          pill.style.opacity = 1;
+          hideTimer = setTimeout(() => (pill.style.opacity = 0), 3000);
+        } else {
+          pill.style.opacity = 1;
+        }
+      };
+    })();
+
+        /* === 실제 저장 트리거 === */
+            function saveMarkdown() {
+              const md = window.tiptapEditor?.getText?.() ?? '';
+              updateStatus('saving', 'Saving…');                         // ① UI 선표시
+              window.webkit.messageHandlers.saveNote.postMessage(md);    // ② Swift 로 전달
+            }
+        
+            /* Cmd+S 단축키 */
+            document.addEventListener('keydown', (e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+                e.preventDefault();
+                saveMarkdown();
+              }
+            });
+        
+            /* 2 초 무입력 자동저장 */
+            let autosaveTimer = null;
+            document.addEventListener('input', () => {
+              clearTimeout(autosaveTimer);
+              autosaveTimer = setTimeout(saveMarkdown, 2000);
+            });
+</script>
+  <!-- Main editor bundle -->
+  <script>window.tiptapEditor = undefined;</script>
+</body>
+</html>
+

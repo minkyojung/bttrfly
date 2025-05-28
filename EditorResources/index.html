@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Inter – Sans‑serif font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      /* ❶ 전역 기본 서체 – 굵기 300~700 모두 SF Pro Text */
+      :root {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 1.6;
+        letter-spacing: -0.015em;
+        --bg-window:   #0E0E11;   /* darker neutral for dark‑mode */
+        --bg-bar:      #0E0E11;
+        --fg-primary:  #FFFFFF;           /* main text & icons */
+        --fg-secondary: rgba(255,255,255,0.60); /* secondary text */
+        --accent:      #CBCBCC;           /* outlines (checkbox etc.) */
+        --caret:       #FFFFFF;           /* caret colour (dark‑mode default) */
+        --dot-glow-blur:   3px;   /* 네온 블러 정도 (값만 바꾸면 즉시 반영) */
+        --dot-glow-spread: 1px;   /* 글로우가 퍼지는 거리 */
+      }
+      /* ── Light‑mode overrides ─────────────────────────────── */
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg-window:   #FFFFFF;
+          --bg-bar:      #F1F1F3;
+          --fg-primary:  #333333;
+          --fg-secondary: rgba(0,0,0,0.55);
+          --accent:      #454547;
+          --caret:       #333333;           /* caret colour for light mode */
+        }
+      }
+
+      /* === SF‑Symbol masks for custom checkbox ========================= */
+      :root {
+        /* Unchecked:   SF Symbol “circle” (thin 1.5 px ring) */
+        --sf-circle: url('data:image/svg+xml;utf8,\
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" \
+stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">\
+<circle cx="7" cy="7" r="6.25"/></svg>');
+
+        /* Checked:   SF Symbol “checkmark.circle.fill” */
+        --sf-checkmark-circle-fill: url('data:image/svg+xml;utf8,\
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" fill="currentColor" stroke="none">\
+<circle cx="7" cy="7" r="7"/><path d="M4.3 7.3l1.9 1.9 3.5-3.5" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>\
+</svg>');
+      }
+      /* ================================================================ */
+
+
+      /* ❷ 코드 블록·인라인도 SF Pro로 통일하려면 ↓ 추가 */
+      pre, code {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: -0.015em;
+      }
+        
+        html, body {
+          background: transparent;
+          height: 100%;      /* fill the WKWebView frame */
+          width: 100%;       /* allow absolute elements to span full width */
+          margin: 0;         /* remove default 8‑px browser margin */
+          overflow: hidden;  /* suppress the root scrollbar */
+        }
+
+        #editorRoot {
+          height: calc(100% - 42px);   /* leave a larger blank area below */
+          overflow-x: hidden;        /* stop horizontal scroll that nudged the view */
+          margin-bottom: 42px;         /* extra gap between editor and bottom bar */
+        }
+
+        .ProseMirror {
+          height: 100%;
+        }
+        
+        
+        /* ❸ List indentation & spacing tweaks */
+        .ProseMirror ul,
+        .ProseMirror ol {
+          padding-left: 1.5em;
+          margin-top: 0.5em;       /* 목록 위 여백 더 넓게 */
+          margin-bottom: 0.5em;    /* 목록 아래 여백 더 넓게 */
+        }
+
+        /* --- Bullet list vs task list separation -------------------------------- */
+        /* Remove bullets for the task‑list container itself */
+        .ProseMirror ul[data-type="taskList"] {
+          list-style: none;      /* hide disk bullet on the outer <ul> */
+          margin: 0.5em 0;
+          padding-left: 0;       /* align checkbox flush with body text */
+        }
+        /* Default bullet / ordered lists */
+        .ProseMirror ul:not([data-type="taskList"]) {
+          list-style-position: outside;
+          list-style-type: disc;     /* white circle bullet */
+          padding-left: 1.5em;       /* keep indent */
+        }
+
+        /* Remove bullet for task list items completely (use grid for selection highlight fix) */
+        .ProseMirror ul[data-type="taskList"] > li,
+        .ProseMirror li[data-checked] {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          display: grid;                 /* grid solves WebKit selection bug */
+          grid-template-columns: auto 1fr; /* col‑1 checkbox, col‑2 text */
+          column-gap: 0.45em;
+          align-items: flex-start;           /* top‑align to avoid vertical shift */
+        }
+
+        .ProseMirror li[data-checked] > label {
+          flex: 0 0 auto;          /* keep fixed checkbox width */
+          display: inline-flex;
+          align-items: center;
+        }
+
+        .ProseMirror li[data-checked] input[type="checkbox"]{
+          /* Visually hidden but accessible */
+          position: absolute;
+          opacity: 0;
+          width: 0;
+          height: 0;
+          margin: 0;
+          pointer-events: none;
+        }
+
+        /* ── Custom square checkbox (border only) ─────────────────── */
+        .ProseMirror li[data-checked] label > span {
+          width: 0.9em;
+          height: 0.9em;
+          border: 2px solid var(--accent); /* outer square */
+          border-radius: 6px;              /* subtle rounding */
+          display: inline-block;
+          position: relative;
+          background: transparent;
+          /* nudge down so checkbox aligns visually with text baseline */
+          margin-top: 2px;
+        }
+        /* inner filled square, revealed when checked */
+        .ProseMirror li[data-checked] label > span::after {
+          content: '';
+          position: absolute;
+          inset: 1.5px;              /* gap between outer and inner */
+          border: 2px solid var(--accent);
+          border-radius: 3px;
+          background: var(--accent);
+          opacity: 0;              /* hidden by default */
+          transition: opacity .15s ease;
+        }
+        /* make the entire checkbox area show a hand cursor */
+        .ProseMirror li[data-checked] label,
+        .ProseMirror ul[data-type="taskList"] > li label {
+          cursor: pointer !important;
+        }
+        /* show inner square when checkbox is checked */
+        .ProseMirror li[data-checked] input[type="checkbox"]:checked + span::after {
+          opacity: 1;
+        }
+
+        /* --- Completed task: strikethrough & dim --- */
+        .ProseMirror li[data-checked="true"] > div {
+          text-decoration: line-through;
+          color: var(--fg-secondary);
+          opacity: 1;
+        }
+
+        /* Tighten spacing inside task‑items */
+        .ProseMirror li[data-checked] > div {
+          flex: 1 1 auto;          /* let text grow & wrap naturally */
+          min-width: 0;            /* allow wrapping inside flex */
+          line-height: inherit;
+          user-select: text;           /* ensure task text is selectable ✅ */
+        }
+
+        /* Remove paragraph margins inside task items (p lives one level deeper) */
+        .ProseMirror li[data-checked] p {
+          margin: 0;
+        }
+
+        .ProseMirror li {
+          line-height: 1.4;
+          margin: 0.1em 0;      /* 항목 간 상하 간격 감소 */
+        }
+
+        /* more breathing room between task‑list items without touching bullets */
+        .ProseMirror ul[data-type="taskList"] > li + li {
+          margin-top: 0.35em;   /* adjust value to taste */
+        }
+
+        /* ❸‑b  Tighten paragraphs *inside* list items */
+        .ProseMirror li > p {
+          margin: 0;            /* remove default <p> 1 em margins */
+          line-height: 1.4;     /* keep same rhythm as list item */
+        }
+
+        /* ❹ Plain paragraph spacing */
+        .ProseMirror p {
+          margin: 0 0 0.6em;     /* kill default top margin, keep bottom rhythm */
+          line-height: 1.6;
+        }
+
+        /* ❹‑b Ensure first list sits on the same baseline as first paragraph */
+        .ProseMirror > ul:first-child,
+        .ProseMirror > ol:first-child {
+          margin-top: 0;         /* remove residual top margin */
+        }
+        
+        
+        .ProseMirror {
+          height: 100%;
+          box-sizing: border-box;      /* include padding inside the 100% height */
+          overflow-y: auto;       /* vertical scroll */
+          overflow-x: hidden;     /* lock horizontal position – stop sideways jitter */
+          outline: none;      /* 초록색 포커스 제거 */
+          background: transparent;
+          padding: 16px 0 72px;      /* top 16, no side gutter, bottom 72 */
+          scroll-padding-top: 16px;
+          font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 14px;
+          color: var(--fg-primary);        /* 어두운 블러 위에서 잘 보이는 흰색 */
+          /* Scrollbar colour for Firefox */
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255,255,255,0.30) transparent;
+          width: 100%;          /* lock width so the editor doesn't re-flow on input */
+        }
+
+        /* ❻ Link appearance – color, underline, hand cursor */
+        .ProseMirror a {
+          color: #4DA8FF;           /* link colour – tweak to taste */
+          text-decoration: underline;
+          text-underline-offset: 2px; /* cleaner gap under text */
+          cursor: pointer;          /* hand cursor when hovering */
+        }
+
+        .ProseMirror a:hover {
+          filter: brightness(1.15); /* subtle highlight on hover */
+        }
+
+        /* Keep scrollbar track invisible, let system draw the thumb */
+        .ProseMirror::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        /* --- Global override so *any* scroll area stays transparent --- */
+        ::-webkit-scrollbar-track,
+        ::-webkit-scrollbar-track-piece,
+        ::-webkit-scrollbar-corner     { background: transparent !important; }
+
+        /* fallback for Firefox/Gecko everywhere */
+        html, body, .ProseMirror {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255,255,255,0.30) transparent;
+        }
+
+        /* ❺ Heading spacing override */
+        .ProseMirror h1,
+        .ProseMirror h2,
+        .ProseMirror h3,
+        .ProseMirror h4,
+        .ProseMirror h5,
+        .ProseMirror h6 {
+          margin-top: 0.4em;        /* remove default top space */
+          margin-bottom: 0.1em; /* tighter bottom rhythm */
+        }
+
+        /* === Completely hide scrollbars inside the editor === */
+        .ProseMirror {
+          scrollbar-width: none;          /* Firefox */
+        }
+        .ProseMirror::-webkit-scrollbar {
+          width: 0 !important;            /* Safari/Chrome */
+          height: 0 !important;
+          display: none;                  /* WebKit (additional safeguard) */
+        }
+        
+        /* ── Bottom bar ───────────────────────────── */
+        body { position: relative; }   /* anchor for absolute bar */
+        #bottomBar {
+          position: fixed;
+          bottom: 6px;
+          left: 0;
+          right: 0;
+          height: 24px;             /* taller bar like titlebar */
+          line-height: 24px;
+          min-height: 24px;
+          display: flex;
+          align-items: center;
+          padding: 0 2px 0 2px;   /* back to edge‑flush */
+          backdrop-filter: none;  /* same translucent feel */
+          border-radius: 0px;       /* match window inner radius */
+          font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 12px;
+          color: var(--fg-secondary);
+        }
+
+
+        #charCount {
+           margin-left: auto;
+           color: var(--fg-secondary);
+           font-size: 11px;      /* ← 12 px ➜ 10 px로 축소 */
+           line-height: 1;       /* 숫자가 세로로도 딱 맞게 */
+         }
+        
+        /* ── Bottom-bar logo ───────────────────────── */
+        #noteLogo{
+          display:inline-flex;
+          align-items:center;
+          height:12px;
+          margin-right:6px;
+        }
+        #noteLogo img{
+          height:100%;
+          width:auto;
+        }
+
+        /* Caret thickness & color */
+        
+        .ProseMirror {
+          caret-color: var(--caret);
+        }
+
+/* === 상태 Pill ===================================== */
+#statusPill{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;padding:2px 6px 2px 0;border-radius:4px; /* 왼쪽 패딩 0 */
+  transition:opacity .2s;
+}
+ #statusPill .dot{
+   position:relative;
+   display:inline-block;
+   width:4px;height:4px;
+   border-radius:50%;
+ }
+
+/* 상태별 색상 */
+.state--saving .dot{
+  background:#FFD700;            /* 본체 색 */
+  --dotColor:#FFD700;
+  animation:pulse 1s infinite;
+  box-shadow:0 0 var(--dot-glow-blur) var(--dotColor);
+}
+.state--ok .dot{
+  background:#3CC57D;
+  --dotColor:#3CC57D;
+  box-shadow:0 0 var(--dot-glow-blur) var(--dotColor);
+}
+.state--error .dot{
+  background:#FF5B5B;
+  --dotColor:#FF5B5B;
+  box-shadow:0 0 var(--dot-glow-blur) var(--dotColor);
+}
+
+@keyframes pulse{0%,100%{opacity:.3;}50%{opacity:1;}}
+    </style>
+  <meta charset="utf-8" />
+  <title>MVP</title>
+  <script defer type="text/javascript" src="./bundle.js"><!-- vite-ignore --></script>
+</head>
+<body>
+  <div id="editorRoot"></div>
+
+  <div id="bottomBar">
+      <picture id="noteLogo">
+          <source srcset="bttrfly-dark.svg" media="(prefers-color-scheme: dark)">
+          <img src="bttrfly-light.svg" alt="Bttrfly logo">
+        </picture>
+
+        <span id="statusPill" class="state--idle">
+            <span class="dot"></span>
+            <span class="text"></span>
+        </span>
+        <span id="charCount">0</span>   <!-- 글자 수만 남김 -->
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const editorEl = document.querySelector('.ProseMirror');
+        const counterEl = document.getElementById('charCount');
+        function updateCount() {
+          counterEl.textContent = editorEl?.textContent.length ?? 0;
+        }
+        updateCount();
+        editorEl?.addEventListener('input', updateCount);
+      });
+    </script>
+    <script>
+    /* === Status Pill helper === */
+    (function () {
+      const pill = document.getElementById('statusPill');
+      const text = pill.querySelector('.text');
+      let hideTimer = null;
+
+      window.updateStatus = function (type = 'idle', msg = '') {
+        pill.className = 'state--' + type;   // 상태 클래스 갱신
+        text.textContent = msg;              // 메시지 변경
+
+        clearTimeout(hideTimer);
+        if (['ok', 'error'].includes(type)) { // 성공·실패는 3초 뒤 자동 숨김
+          pill.style.opacity = 1;
+          hideTimer = setTimeout(() => (pill.style.opacity = 0), 3000);
+        } else {
+          pill.style.opacity = 1;
+        }
+      };
+    })();
+
+        /* === 실제 저장 트리거 === */
+            function saveMarkdown() {
+              const md = window.tiptapEditor?.getText?.() ?? '';
+              updateStatus('saving', 'Saving…');                         // ① UI 선표시
+              window.webkit.messageHandlers.saveNote.postMessage(md);    // ② Swift 로 전달
+            }
+        
+            /* Cmd+S 단축키 */
+            document.addEventListener('keydown', (e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+                e.preventDefault();
+                saveMarkdown();
+              }
+            });
+        
+            /* 2 초 무입력 자동저장 */
+            let autosaveTimer = null;
+            document.addEventListener('input', () => {
+              clearTimeout(autosaveTimer);
+              autosaveTimer = setTimeout(saveMarkdown, 2000);
+            });
+</script>
+  <!-- Main editor bundle -->
+  <script>window.tiptapEditor = undefined;</script>
+</body>
+</html>
+

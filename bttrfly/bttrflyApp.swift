@@ -91,7 +91,7 @@ struct CombinedPrefs: View {
 
     // static developer info
     private let devName  = "William Jung"
-    private let devEmail = "williamjung0130@gmail.com"
+    private let devEmail = "williamjung@bttrfly.me"
     private let blogURL  = URL(string: "https://bttrflynote.substack.com/")!
 
     var body: some View {

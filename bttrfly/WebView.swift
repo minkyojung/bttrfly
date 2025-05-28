@@ -15,6 +15,11 @@ struct WebView: NSViewRepresentable {
         let cfg = WKWebViewConfiguration()
         cfg.userContentController.add(context.coordinator, name: "didChange")
         cfg.userContentController.add(context.coordinator, name: "openLink")
+        cfg.userContentController.add(context.coordinator, name: "saveNote")
+        // Allow local scripts and modules to load from file:// URLs (macOS 13+)
+        if let prefs = cfg.preferences as? NSObject {
+            prefs.setValue(true, forKey: "allowFileAccessFromFileURLs")
+        }
         let web = WKWebView(frame: .zero, configuration: cfg)
         // Enable Web Inspector for debugging
         web.configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
@@ -26,14 +31,18 @@ struct WebView: NSViewRepresentable {
             scrollView.hasVerticalScroller = false
             scrollView.hasHorizontalScroller = false
         }
-        // Load local EditorResources/index.html
+        // Load the editor's index.html (prefer the dist build, fall back to root)
         if let htmlURL = Bundle.main.url(forResource: "index",
                                          withExtension: "html",
+                                         subdirectory: "EditorResources/dist") ??
+                         Bundle.main.url(forResource: "index",
+                                         withExtension: "html",
                                          subdirectory: "EditorResources") {
+
             web.loadFileURL(htmlURL,
                             allowingReadAccessTo: htmlURL.deletingLastPathComponent())
         } else {
-            print("❌ index.html not found in bundle")
+            print("❌ index.html not found in bundle – check your Copy Bundle Resources phase")
         }
         context.coordinator.web = web   // keep reference for Swift → JS updates
         return web
@@ -93,6 +102,12 @@ struct WebView: NSViewRepresentable {
                 print("[Swift] got openLink →", url.absoluteString)
                 let ok = NSWorkspace.shared.open(url)
                 print("[Swift] NSWorkspace.open returned", ok)
+                return
+            }
+            else if message.name == "saveNote",
+                    let markdown = message.body as? String {
+                print("🔖 saveNote received – \(markdown.count) chars")
+                // TODO: persist markdown to model or disk
                 return
             }
 
