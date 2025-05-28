@@ -3,6 +3,8 @@ import AppKit
 import UniformTypeIdentifiers
 
 final class MarkdownModel: ObservableObject {
+    /// Global shared instance – the *only* MarkdownModel in the app
+    static let shared = MarkdownModel()
     let debugID = UUID()           // 디버그용 식별자
     @Published var text: String = ""
     @Published var url: URL?
@@ -13,8 +15,17 @@ final class MarkdownModel: ObservableObject {
     /// Keeps the window title synced with the first 20 characters of the note
     private var titleCancellable: AnyCancellable?
     private var securityAccess: Bool = false
-    /// Folder chosen in onboarding; must be non‑nil before any save/write.
-    var saveFolder: URL?
+    /// Folder chosen in onboarding; *single* source of truth for the whole app.
+    @Published var saveFolder: URL? {
+        didSet {
+            print("🪵 saveFolder didSet →", saveFolder?.path ?? "nil")
+            guard let folder = saveFolder else { return }
+            // ⓐ Persist security‑scoped bookmark (overwrite if exists)
+            saveBookmark(for: folder)
+            // ⓑ Persist plain‑URL for legacy / convenience
+            UserDefaults.standard.set(folder, forKey: "bttrflySaveFolder")
+        }
+    }
     
 
 
@@ -25,7 +36,12 @@ final class MarkdownModel: ObservableObject {
         set { UserDefaults.standard.set(newValue, forKey: "statsFocusSeconds") }
     }
 
-    init() {
+    private init() {
+        // Restore folder from bookmark (preferred) or plain URL
+        if let restored = loadSavedFolderURL() ??
+                          UserDefaults.standard.url(forKey: "bttrflySaveFolder") {
+            saveFolder = restored
+        }
         // Auto‑save whenever text changes (0.5 s debounce)
         print("🪵 MarkdownModel init →", debugID)
         saveCancellable = $text
@@ -113,7 +129,7 @@ final class MarkdownModel: ObservableObject {
 
     /// Generate a unique URL in the user's home directory.
     private static func autoGenerateURL(for text: String) throws -> URL {
-        let model = MarkdownModel()
+        let model = MarkdownModel.shared
         guard let baseDir = model.loadSavedFolderURL() else {
             throw NSError(domain: "NoSavedFolderURL", code: 0, userInfo: nil)
         }
@@ -168,6 +184,8 @@ final class MarkdownModel: ObservableObject {
     }
 
     func save() throws {
+        print("💾 save() start — current url:", url?.path ?? "nil",
+              " | saveFolder:", saveFolder?.path ?? "nil")
         // Ensure a save folder exists before writing
         guard let saveFolder else { throw ModelError.noFolder }
 
@@ -271,11 +289,21 @@ final class MarkdownModel: ObservableObject {
         panel.allowsMultipleSelection = false
         panel.prompt = "Choose Folder"
 
-        panel.begin { result in
+        panel.begin { [weak self] result in
+            guard let self = self else { completion(nil); return }
+
             if result == .OK, let folderURL = panel.url {
-                let _ = folderURL.startAccessingSecurityScopedResource()
-                self.saveBookmark(for: folderURL)
-                self.saveFolder = folderURL          // ← NEW
+                print("✅ picked folder →", folderURL.path)
+                // ── Release security scope on old file before switching folders ──
+                if self.securityAccess, let old = self.url {
+                    old.stopAccessingSecurityScopedResource()
+                    self.securityAccess = false
+                }
+
+                _ = folderURL.startAccessingSecurityScopedResource()
+                // self.saveBookmark(for: folderURL)   // now handled in saveFolder's didSet
+                self.saveFolder = folderURL
+                // UserDefaults.standard.set(folderURL, forKey: "bttrflySaveFolder")   // legacy path key (now handled in saveFolder's didSet)
                 self.updateStats()
                 completion(folderURL)
             } else {

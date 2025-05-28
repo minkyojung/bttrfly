@@ -25,6 +25,8 @@ struct QuickOpenView: View {
     @FocusState private var listFocused: Bool
     @Environment(\.colorScheme) private var colorScheme
     @State private var hoverDropdown = false
+    /// The *current* default save folder (updates when the user changes it in Settings)
+    @State private var currentCore: URL? = nil
     @State private var pinned: [URL] = loadPinnedFolders()
     @State private var hoverAdd = false
     @State private var dragging: URL? = nil      // current item being dragged
@@ -33,8 +35,8 @@ struct QuickOpenView: View {
     // Track which row the mouse is currently over
     @State private var hovered: URL? = nil
 
-    /// User‑specified default save folder (nil until the user picks one)
-    private var coreFolder: URL? { model.loadSavedFolderURL() }
+    /// Live reference to the app‑wide default save folder
+    private var coreFolder: URL? { model.saveFolder }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -161,14 +163,8 @@ struct QuickOpenView: View {
             }
         }
         .onAppear {
-            // Sync pinned array with preference
-            if let core = coreFolder {
-                if !showDefaultFolder {
-                    pinned.removeAll { $0 == core }
-                } else if !pinned.contains(core) {
-                    pinned.insert(core, at: 0)
-                }
-            }
+            currentCore = coreFolder
+            syncDefaultFolder(to: currentCore)
             print("🪵 QuickOpenView sees →", model.debugID)
 
             // ⏎ / Enter opens the currently‑selected note, all other keys go through
@@ -186,6 +182,10 @@ struct QuickOpenView: View {
                 }
                 return ev
             }
+        }
+        .onReceive(model.$saveFolder) { newCore in
+            print("💡 QuickOpenView got new saveFolder →", newCore?.path ?? "nil")
+            syncDefaultFolder(to: newCore)
         }
         .onChange(of: showDefaultFolder) { on in
             if let core = coreFolder {
@@ -321,6 +321,35 @@ struct QuickOpenView: View {
                 scrollProxy?.scrollTo(target, anchor: anchor)
             }
         }
+    }
+}
+
+// MARK: - Default-folder synchronisation
+extension QuickOpenView {
+    /// Keep the pinned-folders chip array in sync with the app‑wide default save folder.
+    fileprivate func syncDefaultFolder(to newCore: URL?) {
+        print("🔄 syncDefaultFolder old:", currentCore?.path ?? "nil",
+              "→ new:", newCore?.path ?? "nil")
+        print("   pinned BEFORE:", pinned.map { $0.lastPathComponent })
+        // ① Remove stale default folder
+        if let old = currentCore, old != newCore {
+            pinned.removeAll { $0 == old }
+        }
+
+        // ② Insert / move the new default folder to index‑0 (if prefs allow)
+        if let core = newCore, showDefaultFolder {
+            if let idx = pinned.firstIndex(of: core) {
+                pinned.move(fromOffsets: IndexSet(integer: idx), toOffset: 0)
+            } else {
+                pinned.insert(core, at: 0)
+            }
+        }
+
+        // ③ Persist user‑pinned folders (excluding the default core)
+        savePinnedFolders(pinned.filter { $0 != newCore })
+
+        print("   pinned AFTER :", pinned.map { $0.lastPathComponent })
+        currentCore = newCore
     }
 }
 

@@ -47,6 +47,7 @@ struct MyFloatingMarkdownApp: App {
         // for at least one `Scene`, while avoiding an empty window opening.
         Settings {
             CombinedPrefs()
+                .environmentObject(appDelegate.model)
                 .frame(width: 600, height: 420)
         }
         .commands {
@@ -79,6 +80,7 @@ struct GeneralPrefs: View {
 
 // MARK: - Combined settings (single pane)
 struct CombinedPrefs: View {
+    @EnvironmentObject var model: MarkdownModel
     // existing stored prefs
     @AppStorage("appTheme") private var appThemeRaw = AppTheme.system.rawValue
     @AppStorage("showDefaultFolder") private var showDefaultFolder = true
@@ -118,6 +120,32 @@ struct CombinedPrefs: View {
                     Label("Note Window Shortcut", systemImage: "keyboard")
                     Spacer()
                     KeyboardShortcuts.Recorder("", name: .showNote)
+                }
+            }
+
+            // ── Storage ─────────────────────────
+            Section("Storage") {
+                HStack {
+                    Label("Save Folder", systemImage: "folder.fill")
+                    Spacer()
+                    Text(model.saveFolder?.lastPathComponent ?? "Not set")
+                        .foregroundColor(.secondary)
+                    Button("Change…") {
+                        model.endSession()                       // finish current focus session
+                        model.chooseSaveFolder { _ in            // async picker
+                            // Start a fresh scratch note in the NEW folder
+                            DispatchQueue.main.async {
+                                model.createNewFile()
+                            }
+                        }
+                    }
+                }
+
+                if let folder = model.saveFolder {
+                    Button("Reveal in Finder") {
+                        NSWorkspace.shared.activateFileViewerSelecting([folder])
+                    }
+                    .buttonStyle(.link)
                 }
             }
 
@@ -233,7 +261,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var welcomePanel: NSWindowController?
     private let hasSeenWelcomeKey = "bttrflyHasSeenWelcome"
     private var onboarding: OnboardingController?
-    let model = MarkdownModel()
+    let model = MarkdownModel.shared
     private var autosave: AutosaveService?
     /// Opacity for the welcome‑panel dim layer
     private let welcomeDimAlpha: CGFloat = 0.45
@@ -259,8 +287,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         onboarding = OnboardingController(model: model)
         onboarding?.presentIfNeeded()
 
-        // Restore saved folder (if any) into the model
-        model.saveFolder = UserDefaults.standard.url(forKey: "bttrflySaveFolder")
+        // Restore previously‑chosen save folder, preferring the security‑scoped bookmark
+        if let restored = model.loadSavedFolderURL() ??
+                          UserDefaults.standard.url(forKey: "bttrflySaveFolder") {
+            model.saveFolder = restored
+        }
 
         // 폴더가 이미 설정된 경우에만 바로 메인 창 생성
         if model.saveFolder != nil {
