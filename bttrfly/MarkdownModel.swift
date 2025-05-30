@@ -1,6 +1,7 @@
 import Combine
 import AppKit
 import UniformTypeIdentifiers
+import Mixpanel
 
 final class MarkdownModel: ObservableObject {
     /// Global shared instance – the *only* MarkdownModel in the app
@@ -75,7 +76,24 @@ final class MarkdownModel: ObservableObject {
     /// Call before switching/closing note to accumulate focus seconds
     func endSession() {
         guard let start = sessionStart else { return }
-        focusSeconds += Int(Date().timeIntervalSince(start))
+        let elapsed = Int(Date().timeIntervalSince(start))
+        focusSeconds += elapsed
+
+        // 🔔 Mixpanel: 집중 세션 종료
+        let origin: String
+        if isScratch {
+            origin = "internal"
+        } else if let core = saveFolder,
+                  !(url?.path.hasPrefix(core.path) ?? true) {
+            origin = "external"
+        } else {
+            origin = "internal"
+        }
+        Mixpanel.mainInstance().track(event: "focus_session_end",
+                                      properties: ["noteId": debugID.uuidString,
+                                                   "durationSec": elapsed,
+                                                   "origin": origin])
+
         UserDefaults.standard.removeObject(forKey: "statsSessionStart")
         UserDefaults.standard.set(focusSeconds, forKey: "statsFocusSeconds")   // ensure persisted
         sessionStart = nil
@@ -121,6 +139,14 @@ final class MarkdownModel: ObservableObject {
         print("🪵 open() called for", url.lastPathComponent, "on model", debugID)
         // Re‑use existing loader; ignore errors silently for now
         try? load(fileURL: url)
+        
+        // 🔔 Mixpanel: 외부 노트 열기
+            if let core = saveFolder, !url.path.hasPrefix(core.path) {
+                Mixpanel.mainInstance().track(event: "open_external_note",
+                                              properties: ["noteId": url.lastPathComponent,
+                                                           "folderPath": url.deletingLastPathComponent().path])
+            }
+        
         startSession()
     }
 
@@ -184,6 +210,8 @@ final class MarkdownModel: ObservableObject {
     }
 
     func save() throws {
+        let firstSave = (url == nil)
+        
         print("💾 save() start — current url:", url?.path ?? "nil",
               " | saveFolder:", saveFolder?.path ?? "nil")
         // Ensure a save folder exists before writing
@@ -216,6 +244,14 @@ final class MarkdownModel: ObservableObject {
         guard let fileURL = url else { return }
         let data = Data(text.utf8)
         try data.write(to: fileURL, options: .atomic)
+        
+        // 🔔 Mixpanel: 첫 저장
+        if firstSave {
+               Mixpanel.mainInstance().track(event: "first_save",
+                                             properties: ["noteId": debugID.uuidString,
+                                                          "chars": text.count])
+           }
+        
         updateStats()
     }
 
@@ -270,6 +306,9 @@ final class MarkdownModel: ObservableObject {
         currentFileName = "Untitled"
         isScratch = true
         startSession()
+        
+        Mixpanel.mainInstance().track(event: "create_note",
+                                          properties: ["noteId": debugID.uuidString])
     }
 
     func presentOpenPanel() {

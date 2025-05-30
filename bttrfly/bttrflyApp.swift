@@ -12,6 +12,7 @@ import UniformTypeIdentifiers
 import KeyboardShortcuts
 import QuartzCore
 import Sparkle
+import Mixpanel
 
 
 enum AppTheme: Int, CaseIterable, Identifiable {
@@ -286,6 +287,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         onboarding = OnboardingController(model: model)
         onboarding?.presentIfNeeded()
+        
+        // 🚀 Mixpanel 초기화 (DEV/PROD 자동 분기)
+        let token = Bundle.main.infoDictionary?["MixpanelToken"] as? String ?? ""
+        print("🚩 Mixpanel token:", token)
+        Mixpanel.initialize(token: token)
+        Mixpanel.mainInstance().loggingEnabled = true  
+        Mixpanel.mainInstance().identify(distinctId: MarkdownModel.shared.debugID.uuidString)
+        Mixpanel.mainInstance().track(event: "app_launch")
 
         // Restore previously‑chosen save folder, preferring the security‑scoped bookmark
         if let restored = model.loadSavedFolderURL() ??

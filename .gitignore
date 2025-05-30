@@ -1,1 +1,4 @@
 EditorResources/dist
+# Mixpanel tokens
+DEV.xcconfig
+PROD.xcconfig

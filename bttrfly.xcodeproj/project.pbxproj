@@ -8,7 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		D80635152DE4403E00CF10A3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = D80635142DE4403E00CF10A3 /* Sparkle */; };
+		D82280152DE992AA00C31621 /* DEV.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = D8227FFF2DE992AA00C31621 /* DEV.xcconfig */; };
+		D82280192DE992AA00C31621 /* PROD.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = D822800B2DE992AA00C31621 /* PROD.xcconfig */; };
 		D8659AB32DCCD55A00BABDE6 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = D8659AB22DCCD55A00BABDE6 /* KeyboardShortcuts */; };
+		D86DD6EF2DE94F97008E0D0B /* Mixpanel in Frameworks */ = {isa = PBXBuildFile; productRef = D86DD6EE2DE94F97008E0D0B /* Mixpanel */; };
 		D8C595712DE7121A001870F4 /* dist in Resources */ = {isa = PBXBuildFile; fileRef = D8C595702DE7121A001870F4 /* dist */; };
 /* End PBXBuildFile section */
 
@@ -30,6 +33,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D8227FFF2DE992AA00C31621 /* DEV.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = DEV.xcconfig; sourceTree = "<group>"; };
+		D822800B2DE992AA00C31621 /* PROD.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = PROD.xcconfig; sourceTree = "<group>"; };
+		D86DD6F02DE97CC2008E0D0B /* DEV.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = DEV.xcconfig; sourceTree = "<group>"; };
+		D86DD6F22DE97F1F008E0D0B /* PROD.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = PROD.xcconfig; sourceTree = "<group>"; };
 		D8748B622DBDF0D8008CD6BE /* bttrfly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bttrfly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8748B732DBDF0D9008CD6BE /* bttrflyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = bttrflyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8748B7D2DBDF0D9008CD6BE /* bttrflyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = bttrflyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -64,6 +71,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D86DD6EF2DE94F97008E0D0B /* Mixpanel in Frameworks */,
 				D8659AB32DCCD55A00BABDE6 /* KeyboardShortcuts in Frameworks */,
 				D80635152DE4403E00CF10A3 /* Sparkle in Frameworks */,
 			);
@@ -86,6 +94,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D8227FF32DE992AA00C31621 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				D86DD6F02DE97CC2008E0D0B /* DEV.xcconfig */,
+				D86DD6F22DE97F1F008E0D0B /* PROD.xcconfig */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		D8659AB12DCCD55A00BABDE6 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -103,6 +120,9 @@
 				D8748B802DBDF0D9008CD6BE /* bttrflyUITests */,
 				D8659AB12DCCD55A00BABDE6 /* Frameworks */,
 				D8748B632DBDF0D8008CD6BE /* Products */,
+				D8227FF32DE992AA00C31621 /* Recovered References */,
+				D8227FFF2DE992AA00C31621 /* DEV.xcconfig */,
+				D822800B2DE992AA00C31621 /* PROD.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
@@ -124,6 +144,7 @@
 			buildConfigurationList = D8748B872DBDF0D9008CD6BE /* Build configuration list for PBXNativeTarget "bttrfly" */;
 			buildPhases = (
 				D8748B5E2DBDF0D8008CD6BE /* Sources */,
+				D88F23182DE9DAD200A1AB92 /* ShellScript */,
 				D8748B5F2DBDF0D8008CD6BE /* Frameworks */,
 				D8748B602DBDF0D8008CD6BE /* Resources */,
 			);
@@ -139,6 +160,7 @@
 			packageProductDependencies = (
 				D8659AB22DCCD55A00BABDE6 /* KeyboardShortcuts */,
 				D80635142DE4403E00CF10A3 /* Sparkle */,
+				D86DD6EE2DE94F97008E0D0B /* Mixpanel */,
 			);
 			productName = bttrfly;
 			productReference = D8748B622DBDF0D8008CD6BE /* bttrfly.app */;
@@ -225,6 +247,7 @@
 			packageReferences = (
 				D8659AAE2DCCD3A100BABDE6 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 				D80635132DE4403E00CF10A3 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				D86DD6ED2DE94F97008E0D0B /* XCRemoteSwiftPackageReference "mixpanel-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D8748B632DBDF0D8008CD6BE /* Products */;
@@ -244,6 +267,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				D8C595712DE7121A001870F4 /* dist in Resources */,
+				D82280152DE992AA00C31621 /* DEV.xcconfig in Resources */,
+				D82280192DE992AA00C31621 /* PROD.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -262,6 +287,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D88F23182DE9DAD200A1AB92 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# -------- 1) 변수 준비 --------\nAPP=\"$BUILT_PRODUCTS_DIR/$WRAPPER_NAME\"        # bttrfly.app\nZIP_NAME=\"bttrfly_${MARKETING_VERSION}.zip\"    # bttrfly_1.0.zip\nZIP_PATH=\"$PROJECT_DIR/BuildArtifacts/$ZIP_NAME\"\n\nKEYS_DIR=\"$PROJECT_DIR/../Developer/SparkleKeys\"\nPRIV_KEY=\"$KEYS_DIR/ed25519_private_key.pem\"\nSIGN_UPDATE=\"$SRCROOT/Packages/Sparkle/bin/sign_update\"\n\nmkdir -p \"$(dirname \"$ZIP_PATH\")\"\n\n# -------- 2) .app → .zip --------\nditto -c -k --sequesterRsrc --keepParent \"$APP\" \"$ZIP_PATH\"\n\n# -------- 3) ZIP 서명 --------\nSIGNATURE=$(\"$SIGN_UPDATE\" -s \"$PRIV_KEY\" \"$ZIP_PATH\" \\\n              | awk -F'\"' '/sparkle:edSignature/ {print $2}')\n\nLENGTH=$(stat -f%z \"$ZIP_PATH\")\n\n# -------- 4) appcast 스니펫 출력 --------\ncat <<EOF\n<item>\n  <title>${MARKETING_VERSION}</title>\n  <enclosure\n    url=\"https://bttrfly.github.io/bttrfly-updates/${ZIP_NAME}\"\n    sparkle:edSignature=\"${SIGNATURE}\"\n    length=\"${LENGTH}\"\n    type=\"application/octet-stream\"/>\n</item>\nEOF\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		D8748B5E2DBDF0D8008CD6BE /* Sources */ = {
@@ -301,6 +346,268 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		D82280A62DE9950600C31621 /* Debug-DEV */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D86DD6F02DE97CC2008E0D0B /* DEV.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/info.plist";
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.7;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = "Debug-DEV";
+		};
+		D82280A72DE9950600C31621 /* Debug-DEV */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D86DD6F02DE97CC2008E0D0B /* DEV.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/bttrfly/bttrfly.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 100;
+				DEVELOPMENT_TEAM = 2JY3Y5R6GS;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Bttrfly;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/EditorResources/node_modules/@rollup/rollup-darwin-arm64",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = williamjung.bttrfly;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = "Debug-DEV";
+		};
+		D82280A82DE9950600C31621 /* Debug-DEV */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D86DD6F02DE97CC2008E0D0B /* DEV.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2JY3Y5R6GS;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = williamjung.bttrflyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/bttrfly.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/bttrfly";
+			};
+			name = "Debug-DEV";
+		};
+		D82280A92DE9950600C31621 /* Debug-DEV */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D86DD6F02DE97CC2008E0D0B /* DEV.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2JY3Y5R6GS;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = williamjung.bttrflyUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = bttrfly;
+			};
+			name = "Debug-DEV";
+		};
+		D82280AA2DE9950B00C31621 /* Release-PROD */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D86DD6F22DE97F1F008E0D0B /* PROD.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/info.plist";
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.7;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = "Release-PROD";
+		};
+		D82280AB2DE9950B00C31621 /* Release-PROD */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D86DD6F22DE97F1F008E0D0B /* PROD.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/bttrfly/bttrfly.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 100;
+				DEVELOPMENT_TEAM = 2JY3Y5R6GS;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Bttrfly;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/EditorResources/node_modules/@rollup/rollup-darwin-arm64",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = williamjung.bttrfly;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = "Release-PROD";
+		};
+		D82280AC2DE9950B00C31621 /* Release-PROD */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D86DD6F22DE97F1F008E0D0B /* PROD.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2JY3Y5R6GS;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = williamjung.bttrflyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/bttrfly.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/bttrfly";
+			};
+			name = "Release-PROD";
+		};
+		D82280AD2DE9950B00C31621 /* Release-PROD */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D86DD6F22DE97F1F008E0D0B /* PROD.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2JY3Y5R6GS;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = williamjung.bttrflyUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = bttrfly;
+			};
+			name = "Release-PROD";
+		};
 		D8748B852DBDF0D9008CD6BE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -353,6 +660,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/info.plist";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.7;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -410,6 +718,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/info.plist";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.7;
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -424,14 +733,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = bttrfly/bttrfly.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/bttrfly/bttrfly.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 100;
-				DEVELOPMENT_TEAM = 6DQK5MQC4H;
+				DEVELOPMENT_TEAM = 2JY3Y5R6GS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Bttrfly;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -456,14 +766,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = bttrfly/bttrfly.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/bttrfly/bttrfly.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 100;
-				DEVELOPMENT_TEAM = 6DQK5MQC4H;
+				DEVELOPMENT_TEAM = 2JY3Y5R6GS;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Bttrfly;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -558,7 +869,9 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D8748B852DBDF0D9008CD6BE /* Debug */,
+				D82280A62DE9950600C31621 /* Debug-DEV */,
 				D8748B862DBDF0D9008CD6BE /* Release */,
+				D82280AA2DE9950B00C31621 /* Release-PROD */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -567,7 +880,9 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D8748B882DBDF0D9008CD6BE /* Debug */,
+				D82280A72DE9950600C31621 /* Debug-DEV */,
 				D8748B892DBDF0D9008CD6BE /* Release */,
+				D82280AB2DE9950B00C31621 /* Release-PROD */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -576,7 +891,9 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D8748B8B2DBDF0D9008CD6BE /* Debug */,
+				D82280A82DE9950600C31621 /* Debug-DEV */,
 				D8748B8C2DBDF0D9008CD6BE /* Release */,
+				D82280AC2DE9950B00C31621 /* Release-PROD */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -585,7 +902,9 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D8748B8E2DBDF0D9008CD6BE /* Debug */,
+				D82280A92DE9950600C31621 /* Debug-DEV */,
 				D8748B8F2DBDF0D9008CD6BE /* Release */,
+				D82280AD2DE9950B00C31621 /* Release-PROD */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -609,6 +928,14 @@
 				minimumVersion = 2.3.0;
 			};
 		};
+		D86DD6ED2DE94F97008E0D0B /* XCRemoteSwiftPackageReference "mixpanel-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mixpanel/mixpanel-swift";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -621,6 +948,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = D8659AAE2DCCD3A100BABDE6 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
 			productName = KeyboardShortcuts;
+		};
+		D86DD6EE2DE94F97008E0D0B /* Mixpanel */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D86DD6ED2DE94F97008E0D0B /* XCRemoteSwiftPackageReference "mixpanel-swift" */;
+			productName = Mixpanel;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

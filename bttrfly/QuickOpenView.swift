@@ -9,6 +9,8 @@ import SwiftUI
 import AppKit
 import Combine
 import UniformTypeIdentifiers
+import Mixpanel
+
 
 /// MVP for Quick‑Open: choose a vault folder, then list all .md files.
 /// Search/filter will come next.
@@ -257,6 +259,9 @@ struct QuickOpenView: View {
         if panel.runModal() == .OK, let url = panel.url {
             guard url.startAccessingSecurityScopedResource() else { return }
             defer { url.stopAccessingSecurityScopedResource() }
+            // I1 : 폴더 선택
+            Mixpanel.mainInstance().track(event: "import_folder_start",
+                                          properties: ["folderPath": url.path])
 
             model.open(url: url)                 // open in main editor
         }
@@ -281,6 +286,10 @@ struct QuickOpenView: View {
             // open this folder immediately
             vaultURL = url
             files = scanMarkdown(in: url)
+            // I2 : 스캔 완료
+            Mixpanel.mainInstance().track(event: "import_scan_complete",
+                                          properties: ["folderPath": url.path,
+                                                       "noteCount": files.count])
         }
     }
 
