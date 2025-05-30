@@ -4,11 +4,10 @@
 
 
 #### Get started
-- [ ] **New note :** ⌘N or click **＋ Button**
-- [ ] **Write freely :** Auto‑save every keystroke—no ⌘S
-- [ ] **Already using Obsidian (or any local `.md` vault)?** Add that folder to **Search Panel** for one‑click access
-- [ ] **Quick switch :** ⌘P finds any note instantly
+- [ ] **New note:** Press ⌘N or click the **＋** button  
+- [ ] **Write freely:** Every keystroke is auto‑saved  
+- [ ] **Already using Obsidian (or any local `.md` vault)?** Add that folder to the **'Search Panel'** for one‑click access  
+- [ ] **Quick switch:** Press ⌘P to find any note instantly  
+- [ ] **Settings:** Press ⌘, to customize the app
 
-
-Your notes stay plain text, right where you saved them.  
-Happy writing! ✨
+### Now, hit ⌘N or ⌘P to start journey!

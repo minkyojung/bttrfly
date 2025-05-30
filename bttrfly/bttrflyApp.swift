@@ -302,8 +302,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             model.saveFolder = restored
         }
 
-        // 폴더가 이미 설정된 경우에만 바로 메인 창 생성
-        if model.saveFolder != nil {
+        /* ------------------------------------------------------------------
+           Only show the main note window automatically *after* the onboarding
+           has been completed at least once.  This prevents the note window
+           from opening side‑by‑side with the onboarding panels on fresh runs.
+           ------------------------------------------------------------------ */
+        let onboardingSeen = UserDefaults.standard.bool(forKey: "bttrflyHasSeenOnboarding")
+        if onboardingSeen, model.saveFolder != nil {
             createMainPanel()
         }
 

@@ -20,6 +20,7 @@
         --fg-secondary: rgba(255,255,255,0.60); /* secondary text */
         --accent:      #CBCBCC;           /* outlines (checkbox etc.) */
         --caret:       #FFFFFF;           /* caret colour (dark‑mode default) */
+        --divider: rgba(255,255,255,0.07);   /* very subtle line for dark mode */
         --dot-glow-blur:   3px;   /* 네온 블러 정도 (값만 바꾸면 즉시 반영) */
         --dot-glow-spread: 1px;   /* 글로우가 퍼지는 거리 */
       }
@@ -32,6 +33,7 @@
           --fg-secondary: rgba(0,0,0,0.55);
           --accent:      #454547;
           --caret:       #333333;           /* caret colour for light mode */
+          --divider: rgba(0,0,0,0.10);         /* subtle line for light mode */
         }
       }
 
@@ -275,6 +277,17 @@ stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stro
           height: 0 !important;
           display: none;                  /* WebKit (additional safeguard) */
         }
+
+      /* ❼ Divider line – theme‑aware */
+      .ProseMirror hr,
+      hr,
+      .divider {
+        margin: 1.2em 0;
+        height: 0;                                /* line drawn by border only */
+        border: none;
+        border-top: 1px solid var(--divider) !important; /* enforce colour */
+        background: none !important;
+      }
         
         /* ── Bottom bar ───────────────────────────── */
         body { position: relative; }   /* anchor for absolute bar */

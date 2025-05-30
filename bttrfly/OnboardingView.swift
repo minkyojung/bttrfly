@@ -156,12 +156,12 @@ private struct WelcomeCard: View {
                     .padding(.bottom, 23)
 
             Text("Ideas Don’t Queue")
-                .font(Font.custom("Pretendard", size: 23)).fontWeight(.black)
+                .font(Font.custom("Pretendard", size: 23)).fontWeight(.heavy)
                 .tracking(-0.8)          // tighter letter‑spacing
             
 
             Text(
-                "Hey, Markdown nerd!\n\nNeed to jot something before the idea evaporates?\nA hotkey opens a note faster than your latte order."
+                "Hey, Markdown nerd!\n\nHit the hotkey to capture the thought before it slips."
             )
                 .fixedSize(horizontal: false, vertical: true)   // prevent truncation, allow full wrap
                 .multilineTextAlignment(.leading)
@@ -180,11 +180,13 @@ private struct WelcomeCard: View {
             .padding(.vertical, 25)
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text("More goodies are on the way!ㅡAI sth :)")
+            Text("More goodies are on the way!ㅡTable, Backlink, AI sth :)")
                 .font(Font.custom("Pretendard", size: 14))
+                .fixedSize(horizontal: false, vertical: true)   // allow wrapping, prevent truncation
                 .foregroundColor(.primary)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 4)
             
             Text("Found a bug—or itching to unload some creative profanity? Smash the email in Settings and let it rip.")
                 .fixedSize(horizontal: false, vertical: true)   // allow full wrap, avoid truncation
