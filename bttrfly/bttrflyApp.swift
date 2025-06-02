@@ -446,10 +446,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.welcomePanel?.close()
             self.welcomePanel = nil
 
-            // Show folder chooser
-            self.model.chooseSaveFolder { folder in
-                if folder != nil {
-                    UserDefaults.standard.set(true, forKey: self.hasSeenWelcomeKey)
+            // Show folder chooser (hop onto Main actor)
+            Task { @MainActor in
+                self.model.chooseSaveFolder { folder in
+                    if folder != nil {
+                        UserDefaults.standard.set(true, forKey: self.hasSeenWelcomeKey)
+                    }
                 }
             }
         })

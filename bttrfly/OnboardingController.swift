@@ -36,7 +36,13 @@ final class OnboardingController {
         panel.contentView?.layer?.masksToBounds = true
 
         let host = NSHostingController(rootView: OnboardingView(
-            pickFolder: { [weak self] in self?.pickFolder() }))
+            pickFolder: { [weak self] in
+                guard let self else { return }
+                // Hop onto the Main actor asynchronously to satisfy isolation
+                Task { @MainActor in
+                    self.pickFolder()
+                }
+            }))
         panel.contentView = host.view
         panel.center()
 
@@ -73,7 +79,13 @@ final class OnboardingController {
         panel.contentView?.layer?.masksToBounds = true
 
         let host = NSHostingController(rootView: OnboardingView(
-            pickFolder: { [weak self] in self?.pickFolder() }))
+            pickFolder: { [weak self] in
+                guard let self else { return }
+                // Hop onto the Main actor asynchronously to satisfy isolation
+                Task { @MainActor in
+                    self.pickFolder()
+                }
+            }))
         panel.contentView = host.view
 
         // Attach as child so it stays in sync with parent position
@@ -86,6 +98,7 @@ final class OnboardingController {
     }
 
     // MARK: Helpers
+    @MainActor
     private func pickFolder() {
         // Keep a strong reference so we can restore it if user cancels
         guard let onboardingWin = self.window else { return }

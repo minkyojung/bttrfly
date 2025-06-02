@@ -320,7 +320,15 @@ final class MarkdownModel: ObservableObject {
         }
     }
     
+    @MainActor
     func chooseSaveFolder(completion: @escaping (URL?) -> Void) {
+        print("🐛 chooseSaveFolder on main? –", Thread.isMainThread)
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in
+                self?.chooseSaveFolder(completion: completion)
+            }
+            return
+        }
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true

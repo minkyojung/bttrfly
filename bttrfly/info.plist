@@ -19,6 +19,6 @@
 	<key>MixpanelToken</key>
 	<string>$(MIXPANEL_TOKEN)</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.william.bttrfly</string>
+	<string>williamjung.bttrfly</string>
 </dict>
 </plist>
