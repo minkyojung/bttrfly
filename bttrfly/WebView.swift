@@ -16,6 +16,7 @@ struct WebView: NSViewRepresentable {
         cfg.userContentController.add(context.coordinator, name: "didChange")
         cfg.userContentController.add(context.coordinator, name: "openLink")
         cfg.userContentController.add(context.coordinator, name: "saveNote")
+        cfg.userContentController.add(context.coordinator, name: "installUpdate")
         // Allow local scripts and modules to load from file:// URLs (macOS 13+)
         if let prefs = cfg.preferences as? NSObject {
             prefs.setValue(true, forKey: "allowFileAccessFromFileURLs")
@@ -42,6 +43,7 @@ struct WebView: NSViewRepresentable {
             print("❌ index.html not found – check Copy Bundle Resources.")
         }
         context.coordinator.web = web   // keep reference for Swift → JS updates
+        (NSApp.delegate as? AppDelegate)?.webView = web
         return web
     }
 
@@ -99,6 +101,12 @@ struct WebView: NSViewRepresentable {
                 print("[Swift] got openLink →", url.absoluteString)
                 let ok = NSWorkspace.shared.open(url)
                 print("[Swift] NSWorkspace.open returned", ok)
+                return
+            }
+            else if message.name == "installUpdate" {
+                print("[Swift] installUpdate requested from JS")
+                (NSApp.delegate as? AppDelegate)?
+                    .updater?.checkForUpdates()
                 return
             }
             else if message.name == "saveNote",

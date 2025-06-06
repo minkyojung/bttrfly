@@ -6,6 +6,7 @@
 //
 
 
+
 import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
@@ -13,6 +14,9 @@ import KeyboardShortcuts
 import QuartzCore
 import Sparkle
 import Mixpanel
+import WebKit          // for WKWebView reference
+
+enum LaunchFlow { case onboarding, whatsNew, main }
 
 
 enum AppTheme: Int, CaseIterable, Identifiable {
@@ -53,10 +57,16 @@ struct MyFloatingMarkdownApp: App {
         }
         .commands {
             MainCommands()
+            
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") {
+                    print("🔔 메뉴 클릭")          // 디버그용 로그
+                    appDelegate.updater?.checkForUpdates()
+                }
+            }
         }
+        
     }
-    
-    
 }
 
 struct GeneralPrefs: View {
@@ -257,7 +267,7 @@ struct ProfilePrefs: View {
     }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     var panel: FloatingPanelController?
     private var welcomePanel: NSWindowController?
     private let hasSeenWelcomeKey = "bttrflyHasSeenWelcome"
@@ -268,13 +278,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let welcomeDimAlpha: CGFloat = 0.45
     /// Sparkle updater controller
     private var updaterController: SPUStandardUpdaterController?
+    /// Expose Sparkle’s underlying updater
+    var updater: SPUUpdater? { updaterController?.updater }
+    /// WebView reference for Swift → JS callbacks
+    weak var webView: WKWebView?
     /// Flag to ensure the bundled quick guide is only inserted once
     @AppStorage("didInsertQuickGuide") private var didInsertQuickGuide = false
 
+    /// Decide which UI flow to start on launch
+    private func decideLaunchFlow() -> LaunchFlow {
+        let d = UserDefaults.standard
+        let version = Bundle.main.shortVersion
+        
+        // First‑time run OR folder not chosen → onboarding
+        if !d.bool(forKey: "bttrflyHasOnboarded") ||
+           d.url(forKey: "bttrflySaveFolder") == nil {
+            return .onboarding
+        }
+        // Seen onboarding but new marketing version → what's‑new
+        if d.string(forKey: "bttrflyLastSeenVersion") != version {
+            return .whatsNew
+        }
+        // Otherwise go straight to main app UI
+        return .main
+    }
+
     func applicationDidFinishLaunching(_ note: Notification) {
+        // 🔎 Print SUFeedURL to verify which feed this build is using
+        print("👉 SUFeedURL =", Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") as? String ?? "nil")
+        print("👉 ArbitraryLoads =", Bundle.main.object(forInfoDictionaryKey: "NSAllowsArbitraryLoads") ?? "nil")
         #if DEBUG
         // Always restart onboarding in DEBUG builds
-        UserDefaults.standard.removeObject(forKey: "bttrflyHasSeenOnboarding")
+        UserDefaults.standard.removeObject(forKey: "bttrflyHasOnboarded")
         UserDefaults.standard.removeObject(forKey: "bttrflySaveFolder")
         if CommandLine.arguments.contains("-resetGuide") {
             UserDefaults.standard.removeObject(forKey: "didInsertQuickGuide")
@@ -285,14 +320,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                name: .bttrflyDidPickFolder,
                                                object: nil)
 
-        onboarding = OnboardingController(model: model)
-        onboarding?.presentIfNeeded()
-        
         // 🚀 Mixpanel 초기화 (DEV/PROD 자동 분기)
         let token = Bundle.main.infoDictionary?["MixpanelToken"] as? String ?? ""
         print("🚩 Mixpanel token:", token)
         Mixpanel.initialize(token: token)
-        Mixpanel.mainInstance().loggingEnabled = true  
+        Mixpanel.mainInstance().loggingEnabled = true
         Mixpanel.mainInstance().identify(distinctId: MarkdownModel.shared.debugID.uuidString)
         Mixpanel.mainInstance().track(event: "app_launch")
 
@@ -302,22 +334,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             model.saveFolder = restored
         }
 
-        /* ------------------------------------------------------------------
-           Only show the main note window automatically *after* the onboarding
-           has been completed at least once.  This prevents the note window
-           from opening side‑by‑side with the onboarding panels on fresh runs.
-           ------------------------------------------------------------------ */
-        let onboardingSeen = UserDefaults.standard.bool(forKey: "bttrflyHasSeenOnboarding")
-        if onboardingSeen, model.saveFolder != nil {
+        // Launch‑flow switch
+        switch decideLaunchFlow() {
+        case .onboarding:
+            onboarding = OnboardingController(model: model)
+            onboarding?.presentIfNeeded()
+            
+        case .whatsNew:
+            // Temporary alert‑style What's‑New until a full controller exists
+            WhatsNewController().present()
+            
+        case .main:
             createMainPanel()
         }
 
         // Start Sparkle automatic updater (checks on launch)
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
-            updaterDelegate: nil,
+            updaterDelegate: self,
             userDriverDelegate: nil
         )
+        updater?.checkForUpdatesInBackground()      // force first check on launch
+        if let upd = updaterController?.updater {
+            print("🟢 SPUUpdater created =", upd)
+            print("🟢 canCheckForUpdates =", upd.canCheckForUpdates)
+            print("🟢 automaticallyChecksForUpdates =", upd.automaticallyChecksForUpdates)
+        } else {
+            print("🔴 updaterController is nil!")
+        }
         // Register global shortcut
         KeyboardShortcuts.onKeyUp(for: .showNote) { [weak self] in
             self?.toggleNote()
@@ -480,6 +524,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             panel.animator().alphaValue = 1
         }
     }
+    // MARK: - Sparkle delegate
+    func updater(_ updater: SPUUpdater,
+                 didFindValidUpdate item: SUAppcastItem,
+                 updateCheck: SPUUpdateCheck) {
+        print("🟢 delegate didFindValidUpdate 👀:", item.versionString)
+        // Persist flag so banner survives app restarts
+        UserDefaults.standard.set(item.displayVersionString,
+                                  forKey: "bttrflyUpdateReady")
+
+        // Notify SwiftUI / WebView to show update banner
+        NotificationCenter.default.post(name: .bttrflyDidDetectUpdate,
+                                        object: item)
+        // Also notify the HTML bottom‑bar
+        if let wv = webView {
+            let js = "window.bttrflyUpdateReady('\\(item.displayVersionString)')"
+            wv.evaluateJavaScript(js, completionHandler: nil)
+        }
+    }
+
+    /// Clear flag after successful install‑and‑relaunch
+    func updaterDidFinishUpdateCycle(_ updater: SPUUpdater) {
+        print("🟢 delegate didFinishUpdateCycle")
+        UserDefaults.standard.removeObject(forKey: "bttrflyUpdateReady")
+    }
+}
+
+// MARK: - Notifications
+extension Notification.Name {
+    static let bttrflyDidDetectUpdate = Notification.Name("bttrflyDidDetectUpdate")
 }
 
 // MARK: - Raycast‑style welcome view

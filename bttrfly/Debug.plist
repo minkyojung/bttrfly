@@ -4,6 +4,10 @@
 <dict>
 	<key>App Transport Security Settings</key>
 	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
 		<key>Exception Domains</key>
 		<dict>
 			<key>localhost</key>

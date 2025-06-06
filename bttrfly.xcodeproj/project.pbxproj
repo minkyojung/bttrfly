@@ -43,9 +43,23 @@
 		D8C595702DE7121A001870F4 /* dist */ = {isa = PBXFileReference; lastKnownFileType = folder; name = dist; path = ../EditorResources/dist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		D85B4B052DF0873A00534F68 /* Exceptions for "bttrfly" folder in "bttrfly" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Debug.plist,
+				info.plist,
+			);
+			target = D8748B612DBDF0D8008CD6BE /* bttrfly */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D8748B642DBDF0D8008CD6BE /* bttrfly */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D85B4B052DF0873A00534F68 /* Exceptions for "bttrfly" folder in "bttrfly" target */,
+			);
 			path = bttrfly;
 			sourceTree = "<group>";
 		};
@@ -399,7 +413,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/info.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/Debug.plist";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.7;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -420,12 +434,12 @@
 				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/bttrfly/bttrfly.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 100;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = 6DQK5MQC4H;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/info.plist";
+				INFOPLIST_FILE = "$(PROJECT_DIR)/bttrfly/Debug.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Bttrfly;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -437,9 +451,10 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/EditorResources/node_modules/@rollup/rollup-darwin-arm64",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = williamjung.bttrfly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SU_FEED_URL = "http://localhost:8000/appcast.xml";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -548,7 +563,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 100;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = 6DQK5MQC4H;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -566,10 +581,11 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/EditorResources/node_modules/@rollup/rollup-darwin-arm64",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = williamjung.bttrfly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SU_FEED_URL = "https://minkyojung.github.io/bttrfly-updates/appcast.xml";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -663,7 +679,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/info.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/Debug.plist";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.7;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -739,12 +755,12 @@
 				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/bttrfly/bttrfly.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 100;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = 6DQK5MQC4H;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "$(SRCROOT)/bttrfly/info.plist";
+				INFOPLIST_FILE = "$(PROJECT_DIR)/bttrfly/Debug.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Bttrfly;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -756,9 +772,10 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/EditorResources/node_modules/@rollup/rollup-darwin-arm64",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = williamjung.bttrfly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SU_FEED_URL = "http://localhost:8000/appcast.xml";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -774,7 +791,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 100;
+				CURRENT_PROJECT_VERSION = 104;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = 6DQK5MQC4H;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -792,10 +809,11 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/EditorResources/node_modules/@rollup/rollup-darwin-arm64",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = williamjung.bttrfly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SU_FEED_URL = "https://minkyojung.github.io/bttrfly-updates/appcast.xml";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};

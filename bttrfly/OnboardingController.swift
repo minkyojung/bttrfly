@@ -1,6 +1,8 @@
+
 import AppKit
 import SwiftUI
 import QuartzCore
+
 
 extension Notification.Name {
     static let bttrflyDidPickFolder = Notification.Name("bttrflyDidPickFolder")
@@ -10,15 +12,15 @@ final class OnboardingController {
     private var window: NSWindow?
     private weak var parent: NSWindow?     // parent to overlay
     private let model: MarkdownModel
-    private let seenKey = "bttrflyHasSeenOnboarding"
+    private let hasOnboardedKey = "bttrflyHasOnboarded"
+    private let lastSeenKey     = "bttrflyLastSeenVersion"
+    private let currentVersion  = Bundle.main.shortVersion
 
     init(model: MarkdownModel) { self.model = model }
 
     /// 앱 부팅 시 호출
     func presentIfNeeded() {
-        #if !DEBUG
-        guard !UserDefaults.standard.bool(forKey: seenKey) else { return }
-        #endif
+        guard !UserDefaults.standard.bool(forKey: hasOnboardedKey) else { return }
 
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 400, height: 550),
@@ -54,7 +56,7 @@ final class OnboardingController {
     /// Presents onboarding as a child‑window overlay on top of `parent`.
     func present(over parent: NSWindow) {
         // Already shown once?
-        if UserDefaults.standard.bool(forKey: seenKey) { return }
+        if UserDefaults.standard.bool(forKey: hasOnboardedKey) { return }
 
         self.parent = parent
 
@@ -126,7 +128,9 @@ final class OnboardingController {
     }
 
     private func finishAndClose() {
-        UserDefaults.standard.set(true, forKey: seenKey)
+        let defaults = UserDefaults.standard
+        defaults.set(true, forKey: hasOnboardedKey)            // mark onboarding done
+        defaults.set(currentVersion, forKey: lastSeenKey)      // remember current version
         fade(window, visible: false)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             self.parent?.removeChildWindow(self.window!)
